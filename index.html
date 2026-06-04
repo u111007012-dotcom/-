@@ -1,0 +1,3911 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>醫檢師國考複習系統</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=Noto+Sans+TC:wght@300;400;500&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #181c27;
+    --surface2: #1e2336;
+    --border: #2a3050;
+    --accent: #4f8ef7;
+    --accent-dim: rgba(79,142,247,0.12);
+    --correct: #2dca8c;
+    --correct-dim: rgba(45,202,140,0.12);
+    --wrong: #f75f5f;
+    --wrong-dim: rgba(247,95,95,0.12);
+    --text: #e8eaf2;
+    --text-muted: #7880a0;
+    --text-dim: #a0a8c0;
+    --gold: #f5c842;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans TC', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* ─── HEADER ─── */
+  header {
+    width: 100%;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(12px);
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-icon {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--accent), #7b6cf5);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+
+  .logo-text {
+    font-family: 'Noto Serif TC', serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+
+  .logo-sub {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    letter-spacing: 0.06em;
+  }
+
+  .header-stats {
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+  }
+
+  .stat-chip {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .stat-chip span {
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  /* ─── PROGRESS BAR ─── */
+  .progress-bar-wrap {
+    width: 100%;
+    height: 3px;
+    background: var(--border);
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), #7b6cf5);
+    transition: width 0.4s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  /* ─── MAIN ─── */
+  main {
+    width: 100%;
+    max-width: 780px;
+    padding: 2.5rem 1.5rem 4rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  /* ─── SUBJECT BADGE ─── */
+  .subject-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 14px;
+    border-radius: 999px;
+    background: var(--accent-dim);
+    border: 1px solid rgba(79,142,247,0.25);
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--accent);
+    letter-spacing: 0.04em;
+    align-self: flex-start;
+  }
+
+  /* ─── QUESTION CARD ─── */
+  .question-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 2rem;
+    animation: fadeUp 0.35s ease both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .question-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.2rem;
+  }
+
+  .q-number {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    letter-spacing: 0.06em;
+  }
+
+  .q-number em {
+    color: var(--gold);
+    font-style: normal;
+    font-weight: 600;
+  }
+
+  .q-text {
+    font-family: 'Noto Serif TC', serif;
+    font-size: 1.08rem;
+    font-weight: 600;
+    line-height: 1.75;
+    color: var(--text);
+    margin-bottom: 1.8rem;
+  }
+
+  /* ─── OPTIONS ─── */
+  .options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .option-btn {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 1rem 1.2rem;
+    background: var(--surface2);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.18s ease;
+    text-align: left;
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 0.95rem;
+    color: var(--text);
+    line-height: 1.6;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .option-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--accent);
+    opacity: 0;
+    transition: opacity 0.18s;
+  }
+
+  .option-btn:hover:not(:disabled) {
+    border-color: var(--accent);
+    transform: translateX(4px);
+  }
+
+  .option-btn:hover:not(:disabled)::before {
+    opacity: 0.04;
+  }
+
+  .option-label {
+    flex-shrink: 0;
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    background: var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    transition: all 0.18s;
+    position: relative;
+    z-index: 1;
+  }
+
+  .option-text {
+    position: relative;
+    z-index: 1;
+    padding-top: 4px;
+  }
+
+  /* ─── CORRECT STATE ─── */
+  .option-btn.correct {
+    border-color: var(--correct);
+    background: var(--correct-dim);
+    cursor: default;
+  }
+
+  .option-btn.correct .option-label {
+    background: var(--correct);
+    color: #0f1117;
+  }
+
+  /* ─── WRONG STATE ─── */
+  .option-btn.wrong {
+    border-color: var(--wrong);
+    background: var(--wrong-dim);
+    cursor: default;
+    animation: shake 0.35s ease;
+  }
+
+  .option-btn.wrong .option-label {
+    background: var(--wrong);
+    color: #fff;
+  }
+
+  /* ─── NEUTRAL (after answer, unselected correct) ─── */
+  .option-btn.highlight-correct {
+    border-color: var(--correct);
+    background: var(--correct-dim);
+    cursor: default;
+  }
+
+  .option-btn.highlight-correct .option-label {
+    background: var(--correct);
+    color: #0f1117;
+  }
+
+  .option-btn.dimmed {
+    opacity: 0.4;
+    cursor: default;
+  }
+
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    20%      { transform: translateX(-6px); }
+    40%      { transform: translateX(6px); }
+    60%      { transform: translateX(-4px); }
+    80%      { transform: translateX(4px); }
+  }
+
+  /* ─── FEEDBACK BANNER ─── */
+  .feedback {
+    display: none;
+    margin-top: 1.5rem;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    animation: fadeUp 0.25s ease both;
+  }
+
+  .feedback.visible { display: block; }
+
+  .feedback-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0.75rem 1.2rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+
+  .feedback.correct-fb .feedback-header {
+    background: rgba(45,202,140,0.18);
+    color: var(--correct);
+    border-bottom: 1px solid rgba(45,202,140,0.2);
+  }
+
+  .feedback.wrong-fb .feedback-header {
+    background: rgba(247,95,95,0.15);
+    color: var(--wrong);
+    border-bottom: 1px solid rgba(247,95,95,0.2);
+  }
+
+  .feedback-body {
+    padding: 1rem 1.2rem;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-top: none;
+    font-size: 0.9rem;
+    line-height: 1.75;
+    color: var(--text-dim);
+  }
+
+  .feedback-body strong {
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  /* ─── NAV ─── */
+  .nav-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 0.5rem;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0.65rem 1.4rem;
+    border-radius: var(--radius-sm);
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.18s;
+    border: none;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  .btn-primary:hover {
+    background: #6fa3ff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 20px rgba(79,142,247,0.35);
+  }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--text-muted);
+    border: 1.5px solid var(--border);
+  }
+
+  .btn-ghost:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+
+  /* ─── RESULT CARD ─── */
+  .result-card {
+    display: none;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 3rem 2rem;
+    text-align: center;
+    animation: fadeUp 0.4s ease both;
+  }
+
+  .result-card.visible { display: block; }
+
+  .result-score {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 4rem;
+    font-weight: 600;
+    background: linear-gradient(135deg, var(--accent), var(--gold));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1;
+    margin-bottom: 0.5rem;
+  }
+
+  .result-label {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin-bottom: 2rem;
+  }
+
+  .result-breakdown {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    margin-bottom: 2rem;
+  }
+
+  .breakdown-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .breakdown-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.5rem;
+    font-weight: 600;
+  }
+
+  .breakdown-num.c { color: var(--correct); }
+  .breakdown-num.w { color: var(--wrong); }
+
+  .breakdown-label {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+  }
+
+  /* ─── DOTS ─── */
+  .dots-nav {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .dot {
+    width: 10px; height: 10px;
+    border-radius: 3px;
+    background: var(--border);
+    cursor: pointer;
+    transition: all 0.18s;
+  }
+
+  .dot.current { background: var(--accent); transform: scale(1.3); }
+  .dot.answered-correct { background: var(--correct); }
+  .dot.answered-wrong { background: var(--wrong); }
+
+  /* ─── SCROLLBAR ─── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">🔬</div>
+    <div>
+      <div class="logo-text">醫檢師國考複習系統</div>
+      <div class="logo-sub">醫事檢驗師國考　100–114 年題庫</div>
+    </div>
+  </div>
+  <div class="header-stats">
+    <div class="stat-chip">題目 <span id="hdr-current">1</span> / <span id="hdr-total">2</span></div>
+    <div class="stat-chip">正確 <span id="hdr-correct">0</span></div>
+    <div class="stat-chip">錯誤 <span id="hdr-wrong">0</span></div>
+  </div>
+</header>
+
+<div class="progress-bar-wrap">
+  <div class="progress-bar-fill" id="progress-bar" style="width:0%"></div>
+</div>
+
+<main>
+  <!-- Dots navigation -->
+  <div class="dots-nav" id="dots-nav"></div>
+
+  <!-- Question section -->
+  <div id="quiz-section">
+    <div class="subject-badge" id="subject-badge">📋 科目</div>
+
+    <div class="question-card" id="question-card">
+      <div class="question-meta">
+        <div class="q-number">第 <em id="q-num">1</em> 題 <span style="color:var(--text-muted)">（共 <span id="q-total">2</span> 題）</span></div>
+        <div id="q-year" style="font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--text-muted);background:var(--surface2);border:1px solid var(--border);padding:2px 10px;border-radius:999px;display:none;"></div>
+      </div>
+      <div class="q-text" id="q-text"></div>
+      <div class="options" id="options"></div>
+
+      <div class="feedback" id="feedback">
+        <div class="feedback-header" id="feedback-header"></div>
+        <div class="feedback-body" id="feedback-body"></div>
+      </div>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn btn-ghost" id="btn-prev" onclick="navigate(-1)">← 上一題</button>
+      <button class="btn btn-primary" id="btn-next" onclick="navigate(1)">下一題 →</button>
+    </div>
+  </div>
+
+  <!-- Result section -->
+  <div class="result-card" id="result-card">
+    <div class="result-score" id="result-score">0%</div>
+    <div class="result-label">本次測驗成績</div>
+    <div class="result-breakdown">
+      <div class="breakdown-item">
+        <div class="breakdown-num c" id="res-correct">0</div>
+        <div class="breakdown-label">答對</div>
+      </div>
+      <div class="breakdown-item">
+        <div class="breakdown-num w" id="res-wrong">0</div>
+        <div class="breakdown-label">答錯</div>
+      </div>
+      <div class="breakdown-item">
+        <div class="breakdown-num" style="color:var(--text-muted)" id="res-skip">0</div>
+        <div class="breakdown-label">未作答</div>
+      </div>
+    </div>
+    <div id="result-subject-breakdown" style="margin-bottom:1.5rem;text-align:left;"></div>
+    <button class="btn btn-primary" onclick="restartQuiz()">🔄 重新開始</button>
+  </div>
+</main>
+
+<script>
+// ════════════════════════════════════════════════════════════════
+//  醫事檢驗師國考題庫｜100 年 ~ 114 年
+//
+//  科目對應（依考選部公告）：
+//   ① 臨床生理學與病理學
+//   ② 臨床血液學與血庫學
+//   ③ 醫學分子檢驗學與臨床鏡檢學（含寄生蟲學）
+//   ④ 微生物學及臨床微生物學（含細菌與黴菌）
+//   ⑤ 生物化學與臨床生化學
+//   ⑥ 臨床血清免疫學與臨床病毒學
+//
+//  每科目 questions 陣列：依序貼入國考題即可
+//  正式考試設定：DRAW_PER_SUBJECT = 80（共 480 題）
+//  題庫不足 80 題時，自動全取該科所有題目
+//  ★ 113-1、113-2、114-1 三份試卷已匯入（共 240 題）
+// ════════════════════════════════════════════════════════════════
+
+// ── 每科抽出題數（正式考試設 80；測試時可先設小數字）──
+const DRAW_PER_SUBJECT = 80;
+
+// ════════════════════════════════════════
+//  六大科目題庫
+//  格式：
+//  {
+//    text: "題目內容",
+//    options: ["(A)...", "(B)...", "(C)...", "(D)..."],
+//    answer: 0,          // 正確選項的 0-based index（A=0, B=1, C=2, D=3）
+//    explanation: "解析內容（可使用 HTML 標籤）",
+//    year: 100,          // 出題年度（民國年）
+//    serial: 1           // 該年度題號
+//  }
+// ════════════════════════════════════════
+const QUESTION_BANK = {
+
+  // ══════════════════════════════════════
+  // ① 臨床生理學與病理學
+  // ══════════════════════════════════════
+  "臨床生理學與病理學": {
+    icon: "🫀",
+    questions: [
+      // ── 待填入國考題（請依格式貼入） ──
+      {
+        text: "（示例）組織學切片中發現細胞核固縮（pyknosis）、核碎裂（karyorrhexis）及核溶解（karyolysis），此為何種細胞死亡方式的典型形態？",
+        options: [
+          "細胞凋亡（Apoptosis）",
+          "壞死（Necrosis）",
+          "細胞自噬（Autophagy）",
+          "有絲分裂失敗（Mitotic catastrophe）"
+        ],
+        answer: 1,
+        explanation: `<strong>壞死（Necrosis）</strong>的細胞核形態三聯症：<br><br>
+• <strong>Pyknosis（核固縮）</strong>：細胞核縮小、染色質濃縮，H&E 染色呈深藍色。<br>
+• <strong>Karyorrhexis（核碎裂）</strong>：固縮的核碎裂成不規則小片段。<br>
+• <strong>Karyolysis（核溶解）</strong>：細胞核完全溶解消失（DNase 降解染色質）。<br><br>
+• Apoptosis 的核特徵為染色質邊緣化（marginalization），形成 apoptotic body，不引發發炎反應。`,
+        year: 0, serial: 0
+      }
+    ]
+  },
+
+  // ══════════════════════════════════════
+  // ② 臨床血液學與血庫學
+  // ══════════════════════════════════════
+  "臨床血液學與血庫學": {
+    icon: "🩸",
+    questions: [
+      {
+        text: "（示例）Peripheral blood smear 染色後，發現紅血球內有嗜鹼性點狀物（basophilic stippling），且患者血液中 δ-ALA 及 erythrocyte protoporphyrin 升高，最可能的診斷為何？",
+        options: [
+          "Iron deficiency anemia",
+          "Lead poisoning（鉛中毒）",
+          "Hemolytic anemia",
+          "Megaloblastic anemia"
+        ],
+        answer: 1,
+        explanation: `<strong>鉛中毒（Lead Poisoning）</strong>的典型血液學表現：<br><br>
+• 鉛抑制血基質合成的多個步驟（δ-ALA dehydratase、ferrochelatase），造成 <strong>δ-ALA 與 erythrocyte protoporphyrin 堆積</strong>。<br>
+• Basophilic stippling 是因鉛抑制 ribosomal RNA 降解酶，導致核糖體殘留於成熟紅血球中。<br>
+• 缺鐵性貧血可見輕度 stippling，但 δ-ALA 不會明顯升高。<br>
+• 溶血性貧血以球狀、破碎紅血球為主；巨球性貧血則見 hypersegmented neutrophil。`,
+        year: 0, serial: 0
+      },
+      {
+        text: "（示例）ABO 血型系統中，血型為 O 型的人，其血清中含有下列何種抗體？",
+        options: [
+          "Anti-A 與 Anti-B",
+          "僅含 Anti-A",
+          "僅含 Anti-B",
+          "不含任何 ABO 抗體"
+        ],
+        answer: 0,
+        explanation: `<strong>O 型血</strong>的血庫學特性：<br><br>
+• O 型人的紅血球上<strong>不表現 A 或 B 抗原</strong>，血清中自然存在 <strong>Anti-A 與 Anti-B</strong> 兩種天然抗體（主要為 IgM）。<br>
+• A 型：含 Anti-B；B 型：含 Anti-A；AB 型：不含 ABO 抗體。<br>
+• 輸血時須注意：輸注全血應同型；O 型洗滌紅血球可作為緊急異型輸血的選擇。`,
+        year: 0, serial: 0
+      }
+    ]
+  },
+
+  // ══════════════════════════════════════
+  // ③ 醫學分子檢驗學與臨床鏡檢學（含寄生蟲學）
+  // ══════════════════════════════════════
+  "醫學分子檢驗學與臨床鏡檢學": {
+    icon: "🔬",
+    questions: [
+      {
+        text: "（示例）糞便檢查發現卵形、兩端有透明塞（polar plug）的蟲卵，最可能是哪種寄生蟲？",
+        options: [
+          "Ascaris lumbricoides（蛔蟲）",
+          "Trichuris trichiura（鞭蟲）",
+          "Enterobius vermicularis（蟯蟲）",
+          "Hookworm（鉤蟲）"
+        ],
+        answer: 1,
+        explanation: `<strong>Trichuris trichiura（鞭蟲）</strong>蟲卵的經典特徵：<br><br>
+• 形狀：橄欖球形（barrel-shaped / football-shaped），兩端各有一透明的 <strong>polar plug（極塞）</strong>。<br>
+• 大小：約 50–55 × 22–24 μm，卵殼光滑，黃棕色。<br>
+• 蛔蟲卵：受精卵有凹凸不平的蛋白質外衣；未受精卵則長而窄。<br>
+• 蟯蟲卵：D 型（一邊扁平），常以膠帶法（Scotch tape）採集肛周。<br>
+• 鉤蟲卵：薄殼橢圓形，內含 4–8 個卵裂球。`,
+        year: 0, serial: 0
+      },
+      {
+        text: "（示例）PCR 技術中，退火溫度（annealing temperature）通常設定在引子（primer）Tm 值的多少度以下？",
+        options: [
+          "高於 Tm 值 5°C",
+          "等於 Tm 值",
+          "低於 Tm 值 5°C",
+          "低於 Tm 值 15°C"
+        ],
+        answer: 2,
+        explanation: `<strong>PCR 退火溫度設定原則：</strong><br><br>
+• 退火溫度（Ta）通常設定在引子 Tm 值<strong>以下 3–5°C</strong>，以確保引子能有效與模板結合。<br>
+• 退火溫度過高 → 引子無法結合，PCR 失敗。<br>
+• 退火溫度過低 → 非專一性擴增增加（non-specific bands）。<br>
+• Tm 計算簡式：Tm = 2°C × (A+T) + 4°C × (G+C)。`,
+        year: 0, serial: 0
+      }
+    ]
+  },
+
+  // ══════════════════════════════════════
+  // ④ 微生物學及臨床微生物學（含細菌與黴菌）
+  // ══════════════════════════════════════
+  "微生物學及臨床微生物學": {
+    icon: "🦠",
+    questions: [
+      {
+        text: "（示例）革蘭氏陰性菌細胞壁中，下列何種成分是其內毒素（endotoxin）的主要組成？",
+        options: [
+          "Peptidoglycan",
+          "Teichoic acid",
+          "Lipopolysaccharide（LPS）",
+          "Mycolic acid"
+        ],
+        answer: 2,
+        explanation: `<strong>Lipopolysaccharide（LPS）</strong>即革蘭氏陰性菌的內毒素：<br><br>
+• LPS 由 <strong>Lipid A（毒性核心）</strong>、Core polysaccharide 及 O-antigen 三部分組成。<br>
+• Lipid A 可觸發強烈的發炎反應（TNF-α、IL-1、IL-6 釋放），嚴重時導致敗血性休克。<br>
+• Peptidoglycan 與 Teichoic acid 為革蘭氏陽性菌細胞壁特有成分。<br>
+• Mycolic acid 為 Mycobacterium 的細胞壁成分，使其具有抗酸染色陽性的特性。`,
+        year: 0, serial: 0
+      },
+      {
+        text: "（示例）Streptococcus pyogenes（A 群鏈球菌）在血液培養基上的溶血型態為何？其最常用的初步鑑別試驗為何？",
+        options: [
+          "α-溶血；Optochin 敏感試驗",
+          "β-溶血；Bacitracin 敏感試驗",
+          "γ-溶血（不溶血）；CAMP test",
+          "β-溶血；Bile solubility 試驗"
+        ],
+        answer: 1,
+        explanation: `<strong>S. pyogenes（GAS，Group A Streptococcus）</strong>鑑別重點：<br><br>
+• 血液培養基上呈 <strong>β-溶血</strong>（完全溶血，菌落周圍出現清澈透明圈）。<br>
+• <strong>Bacitracin 敏感（A disc 敏感）</strong>：GAS 對 Bacitracin 敏感，為初步鑑定的重要試驗。<br>
+• Optochin 敏感用於鑑定 <em>S. pneumoniae</em>（α-溶血）。<br>
+• CAMP test 陽性為 <em>S. agalactiae</em>（B 群鏈球菌）的特徵。<br>
+• Bile solubility 陽性用於鑑定 <em>S. pneumoniae</em>。`,
+        year: 0, serial: 0
+      }
+    ]
+  },
+
+  // ══════════════════════════════════════
+  // ⑤ 生物化學與臨床生化學
+  // ══════════════════════════════════════
+  "生物化學與臨床生化學": {
+    icon: "🧪",
+    questions: [
+      {
+        text: "（示例）下列何種酵素在急性心肌梗塞（AMI）發作後最早升高，且具有最高的心肌特異性？",
+        options: [
+          "Lactate dehydrogenase（LDH）",
+          "Aspartate aminotransferase（AST）",
+          "Cardiac Troponin I（cTnI）",
+          "Creatine kinase（CK-MB）"
+        ],
+        answer: 2,
+        explanation: `<strong>Cardiac Troponin I（cTnI）</strong>是目前診斷 AMI 的黃金標準指標：<br><br>
+• cTnI 在 AMI 發作後 <strong>3–6 小時</strong>開始上升，12–24 小時達高峰，可持續 7–10 天。<br>
+• 心肌特異性遠高於 CK-MB（骨骼肌損傷、心臟手術均不影響 cTnI 特異性）。<br>
+• LDH 與 AST 特異性差，現已少用於 AMI 診斷。<br>
+• CK-MB 上升較早（3–6 h），但骨骼肌亦有少量表現，特異性不如 cTnI。`,
+        year: 0, serial: 0
+      },
+      {
+        text: "（示例）測定血清葡萄糖最常用的酵素法中，下列何者為正確？",
+        options: [
+          "Hexokinase 法使用 Hexokinase + G6PD，特異性最高，為參考方法",
+          "Glucose oxidase 法使用 GOD + Peroxidase，完全不受其他還原物質干擾",
+          "Hexokinase 法需要 NAD⁺ 作為輔酶，在 340 nm 測 NADH 吸光度",
+          "Glucose oxidase 法無法用於自動分析儀"
+        ],
+        answer: 0,
+        explanation: `<strong>血清葡萄糖測定——Hexokinase 法</strong>：<br><br>
+• 反應：Glucose + ATP <strong>→HK→</strong> G-6-P，再由 G6PD 氧化並產生 <strong>NADPH</strong>，於 <strong>340 nm</strong> 比色（需要 NADP⁺，非 NAD⁺）。<br>
+• 為 IFCC/NCCLS 推薦的<strong>參考方法</strong>，特異性最高。<br>
+• Glucose oxidase 法（GOD-POD）雖操作便利，但 ascorbic acid、uric acid 等還原物質可能產生干擾。<br>
+• 兩種方法均廣泛應用於自動分析儀。`,
+        year: 0, serial: 0
+      }
+    ]
+  },
+
+  // ══════════════════════════════════════
+  // ⑥ 臨床血清免疫學與臨床病毒學
+  // ══════════════════════════════════════
+  "臨床血清免疫學與臨床病毒學": {
+    icon: "🛡️",
+    questions: [
+{
+        text: "下列何種主要組織相容性複合體（MHC）表現在胎兒衍生的胎盤細胞（fetus-derived placental cells），可以抑制NK細胞對胎盤細胞的毒殺？",
+        options: [
+          "HLA-A",
+          "HLA-D",
+          "HLA-F",
+          "HLA-G"
+        ],
+        answer: 3,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 1
+      },
+      {
+        text: "下列有關T細胞受體下游的訊息傳遞，何者錯誤？",
+        options: [
+          "ZAP-70激酶能與T細胞受體ζ鏈已磷酸化的酪胺酸基結合",
+          "ZAP-70激酶乙醯化會使T細胞受體的細胞內訊號啟動",
+          "ZAP-70激酶聯合NFAT、AP-1及NF-κB三路徑的啟動而促進T細胞分裂",
+          "ZAP-70由Fyn或Lck作用而活化"
+        ],
+        answer: 1,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 2
+      },
+      {
+        text: "B細胞受體重鏈基因的VDJ重組，下列何種分子負責在V-D junction進行N-nucleotide addition？",
+        options: [
+          "TdT（terminal deoxyribonucleotidyl transferase）",
+          "RAG1/2",
+          "DNA-PKcs",
+          "GST（glutathion S-transferase）"
+        ],
+        answer: 0,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 3
+      },
+      {
+        text: "下列有關腸道中的先天性淋巴細胞（innate lymphoid cells, ILCs）的敘述，何者錯誤？",
+        options: [
+          "人體腸道黏膜中以ILC3族群居多",
+          "成熟的ILC3會分泌IL-17和IL-22",
+          "成熟的ILC3可表現NK細胞接受器NKp44",
+          "T-bet為ILC3的轉錄因子"
+        ],
+        answer: 3,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 4
+      },
+      {
+        text: "下列有關補體活化古典路徑（classical pathway）與凝集素路徑（lectin pathway）之敘述，何者錯誤？",
+        options: [
+          "古典路徑與凝集素路徑分別利用C1q及mannose-binding lectin（MBL）與病原體表面結合",
+          "古典路徑的C1r及C1s與凝集素路徑的MASP-1功能上較相似，與MASP-2及MASP-3無關",
+          "相較於凝集素路徑MBL與先天性免疫功能較有關，古典路徑的C1同時與先天性及適應性免疫功能有關",
+          "此兩個補體活化路徑的C3轉化酶（C3 convertase）及C5轉化酶（C5 convertase）相同"
+        ],
+        answer: 1,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 5
+      },
+      {
+        text: "下列有關細胞激素與其所活化之JAK-STAT成員之配對傳遞訊息，何者正確？",
+        options: [
+          "IFN-γ--JAK1/JAK2--STAT1",
+          "IL-4--JAK1/JAK3--STAT4",
+          "IL-10--JAK1/JAK2--STAT3",
+          "IL-12--JAK2/Tyk2--STAT6"
+        ],
+        answer: 0,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 6
+      },
+      {
+        text: "下列有關吞噬細胞表面受體之敘述，何者正確？",
+        options: [
+          "Dectin-1及CR1屬於C-type lectin的吞噬細胞表面接受體，能夠辨識包含黴菌、細菌及病毒等病原體脂表面抗原成分",
+          "MARCO為scavenger receptors的成員，具有fibronectin-like domain之三聚體構造特徵",
+          "巨噬細胞表面接受體CD36能夠辨識病原體表面許多抗原性成分，但是並不包含長鏈脂肪酸",
+          "fMLF receptor與C5a receptor屬於G-protein-coupled receptors之成員，能夠辨識病原體表面抗原成分，促進殺菌能力"
+        ],
+        answer: 3,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 7
+      },
+      {
+        text: "下列有關生發中心（germinal center）之敘述，何者正確？",
+        options: [
+          "淋巴濾泡（lymphoid follicles）包含生發中心構成初級淋巴濾泡（primary lymphoid follicles）",
+          "生發中心的暗區（dark zone）由表現CXCR4及CXCR5的基質細胞（stromal cell）所構成",
+          "生發中心的亮區（light zone）由表現CXCR4的生發中心母細胞（centroblasts）所構成",
+          "B細胞能夠藉由CXCR4之表現與否在生發中心的暗區（dark zone）與亮區（light zone）來回進出"
+        ],
+        answer: 3,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 8
+      },
+      {
+        text: "下列何者不是由抗體與其Fcγ受體結合後會引發之功能？",
+        options: [
+          "自然殺手細胞（NK cell）所造成之ADCC反應",
+          "促進B細胞活化之能力",
+          "肥大細胞（mast cell）脫顆粒作用（degranulation）",
+          "嗜中性球（neutrophil）的吞噬作用"
+        ],
+        answer: 1,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 9
+      },
+      {
+        text: "下列何種細胞激素是刺激T細胞增生最強的活化因子？",
+        options: [
+          "IL-1",
+          "IL-2",
+          "IL-4",
+          "IL-5"
+        ],
+        answer: 1,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 10
+      },
+      {
+        text: "下列有關T細胞表面抗原之敘述，何者正確？",
+        options: [
+          "T細胞表面同時有T細胞接受器（TCR）及免疫球蛋白的存在",
+          "Naïve T細胞表面有大量的MHC class II抗原表現",
+          "T細胞表面有Epstein-Barr病毒接受器的存在",
+          "輔助性T細胞表面有CD4抗原存在，毒殺性T細胞表面有CD8抗原存在"
+        ],
+        answer: 3,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 11
+      },
+      {
+        text: "下列那一個分子結構不屬於免疫球蛋白超級家族（superfamily）？",
+        options: [
+          "T cell receptor（TCR）",
+          "B cell receptor（BCR）",
+          "Major histocompatibility complex（MHC）",
+          "Toll-like receptor（TLR）"
+        ],
+        answer: 3,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 12
+      },
+      {
+        text: "下列何種分子可直接結合生物素（biotin），而被應用於實驗室檢測分析？",
+        options: [
+          "Streptavidin",
+          "FITC",
+          "Luminol",
+          "HRP"
+        ],
+        answer: 0,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 13
+      },
+      {
+        text: "使用兩個辨識抗原上不同epitope的抗體組合來偵測抗原之方法為下列何者？",
+        options: [
+          "Direct ELISA",
+          "Indirect ELISA",
+          "Sandwich ELISA",
+          "Competitive ELISA"
+        ],
+        answer: 2,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 14
+      },
+      {
+        text: "NBT（nitroblue tetrazolium）試驗異常，表示病人的嗜中性球可能有何種基因缺陷？",
+        options: [
+          "CD18",
+          "CD11a",
+          "NADPH oxidase",
+          "Lysozyme"
+        ],
+        answer: 2,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 15
+      },
+      {
+        text: "造血先驅細胞（progenitor cells）通常表現下列何種表面分子？",
+        options: [
+          "CD5",
+          "CD34",
+          "CD45",
+          "CD21"
+        ],
+        answer: 1,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 16
+      },
+      {
+        text: "下列何種方法可以偵測弓蟲症（toxoplasmosis）患者血清中的IgM含量？",
+        options: [
+          "Enzyme-linked immunosorbent assay",
+          "Indirect fluorescent antibody assay",
+          "Indirect hemagglutination",
+          "Complement fixation"
+        ],
+        answer: 0,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 17
+      },
+      {
+        text: "下列新冠肺炎（COVID-19）的常見血清檢查反應，何者錯誤？",
+        options: [
+          "C反應蛋白含量上升",
+          "白蛋白下降",
+          "IFN-γ含量下降",
+          "IL-6含量上升"
+        ],
+        answer: 2,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 18
+      },
+      {
+        text: "下列有關引起rubeola的病毒特徵之敘述，何者錯誤？",
+        options: [
+          "為正性單股RNA病毒",
+          "具有套膜構造",
+          "具有減毒疫苗",
+          "不會透過胎盤造成胎兒的感染"
+        ],
+        answer: 0,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 19
+      },
+      {
+        text: "某患者症狀初期和經過2～4星期後分別抽血測定Rickettsia rickettsii IgG抗體效價，何者才能作為洛磯山斑疹熱（Rocky Mountain spotted fever）的確診依據？",
+        options: [
+          "4倍，8倍",
+          "16倍，32倍",
+          "32倍，32倍",
+          "16倍，128倍"
+        ],
+        answer: 3,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 20
+      },
+      {
+        text: "肺結核患者的肺部病理切片肉芽腫（granuloma）組織中可發現下列細胞，但何者除外？",
+        options: [
+          "Th1細胞",
+          "B細胞",
+          "活化的巨噬細胞",
+          "多核巨細胞（multinucleated giant cells）"
+        ],
+        answer: 1,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 21
+      },
+      {
+        text: "下列有關過敏反應之誘發試驗（provocation testing）之敘述，何者正確？",
+        options: [
+          "此試驗用於證明過敏疾病之致病機轉",
+          "貼膚試驗（patch test）是一種誘發試驗",
+          "與過敏疾病藥物療效評估有關",
+          "目前誘發試驗只用於皮膚相關過敏反應的測試"
+        ],
+        answer: 1,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 22
+      },
+      {
+        text: "下列有關skin prick test（SPT）、intradermal test（IDT）和ImmunoCAP檢測方法之比較，何者正確？",
+        options: [
+          "SPT具有最佳之靈敏度（sensitivity）與專一性（specificity）",
+          "ImmunoCAP為美國FDA認證許可之檢測方法，具有最佳之檢測靈敏度",
+          "IDT檢測之靈敏度與專一性均為最差",
+          "SPT的檢測專一性為最佳"
+        ],
+        answer: 2,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 23
+      },
+      {
+        text: "下列有關新生兒溶血性疾病（hemolytic disease of newborn, HDN）之敘述，何者錯誤？",
+        options: [
+          "屬於第二型過敏反應，新生兒可能因為過多膽紅素（bilirubin）堆積於腦部導致傷害",
+          "大約65%的HDN是因為Rh D抗原不相容所造成，而ABO血型抗原不相容則較少見",
+          "直接抗球蛋白試驗（DAT）能夠用來測定HDN，主要是測定受試者紅血球表面是否存在抗體",
+          "產婦注射抗Rh因子球蛋白（RhoGAM）能夠有效減少下一胎HDN的發生"
+        ],
+        answer: 1,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 24
+      },
+      {
+        text: "硬皮症（scleroderma）出現下列何種症候群時，測定抗中心粒抗體（anti-centromere）對於疾病診斷有不錯的敏感度與特異性？",
+        options: [
+          "IPEX syndrome",
+          "NEMO syndrome",
+          "CREST syndrome",
+          "Sjögren's syndrome"
+        ],
+        answer: 2,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 25
+      },
+      {
+        text: "抗腎絲球基底膜抗體（anti-glomerular basement membrane antibody）主要對抗下列何種抗原？",
+        options: [
+          "Type I collagen",
+          "Type II collagen",
+          "Type III collagen",
+          "Type IV collagen"
+        ],
+        answer: 3,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 26
+      },
+      {
+        text: "Anti-Sm抗體所對抗的抗原是屬於下列何者？",
+        options: [
+          "dsDNA",
+          "ssDNA",
+          "RNA polymerase",
+          "U-RNP"
+        ],
+        answer: 3,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 27
+      },
+      {
+        text: "下列有關臨床上檢測dsDNA抗體方法的敘述，何者正確？",
+        options: [
+          "可以用免疫螢光抗體在Crithidia luciliae上偵測是否有染上動基體（kinetoplast）",
+          "可以用免疫螢光抗體在Crithidia luciliae上偵測是否有染上生殖核（nucleus）",
+          "可以用免疫螢光抗體在Trypanosoma cruzi上偵測是否有染上動基體（kinetoplast）",
+          "可以用免疫螢光抗體在Trypanosoma cruzi上偵測是否有染上生殖核（nucleus）"
+        ],
+        answer: 0,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 28
+      },
+      {
+        text: "對於類風濕性關節炎具有最高度專一性之早期檢驗指標性抗體為下列何者？",
+        options: [
+          "Rheumatoid factor（RF）",
+          "Anti-mutated and citrullinated vimentin antibodies（anti-MCV）",
+          "Anti-cyclic citrullinated peptide antibodies（anti-CCP）",
+          "Anti-perinuclear factor antibodies（APF）"
+        ],
+        answer: 2,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 29
+      },
+      {
+        text: "下列何種免疫抑制劑使用在器官移植中最能抑制巨噬細胞分泌細胞激素？",
+        options: [
+          "Anti-CD3 monoclonal antibody",
+          "CTLA4-Ig",
+          "Corticosteroid",
+          "Cyclosporine"
+        ],
+        answer: 2,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 30
+      },
+      {
+        text: "免疫抑制藥物FK506用於器官移植時，其調節的免疫機制為何？",
+        options: [
+          "抑制補體媒介的溶解（lysis）作用",
+          "阻斷T細胞共刺激（costimulator）",
+          "抑制IL-2與受體的結合",
+          "抑制淋巴細胞的鈣調磷酸酶（calcineurin）"
+        ],
+        answer: 3,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 31
+      },
+      {
+        text: "下列移植物捐贈者與接受者關係，何者最正確？",
+        options: [
+          "由自身組織移植至另一部位，稱為autograft",
+          "由同種不同基因型個體間的移植，稱為xenograft",
+          "由動物來源組織移植至人體，稱為isograft",
+          "同卵雙生間的移植，稱為allograft"
+        ],
+        answer: 0,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 32
+      },
+      {
+        text: "下列何者不是MHC基因的特性？",
+        options: [
+          "對偶基因互斥性（allelic exclusion）",
+          "多樣性（polymorphism）",
+          "種族差異性（ethnic difference）",
+          "連鎖不平衡（linkage disequilibrium）"
+        ],
+        answer: 0,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 33
+      },
+      {
+        text: "下列何種細胞可因轉錄因子FoxP3基因突變而導致異常？",
+        options: [
+          "毒殺型T細胞（Tc）",
+          "調節型T細胞（Treg）",
+          "自然殺手細胞（NK）",
+          "B細胞"
+        ],
+        answer: 1,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 34
+      },
+      {
+        text: "下列何種細胞激素比較不適合用於腫瘤的免疫療法？",
+        options: [
+          "Interferon",
+          "IL-2",
+          "CSFs（colony-stimulating factors）",
+          "TGF-β"
+        ],
+        answer: 3,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 35
+      },
+      {
+        text: "下列何者是rapamycin抑制T細胞反應的機轉？",
+        options: [
+          "抑制mTOR",
+          "抑制DNA合成",
+          "抑制calcineurin",
+          "抑制T細胞從淋巴結移出"
+        ],
+        answer: 0,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 36
+      },
+      {
+        text: "新的佐劑AS04是鋁鹽中含有LPS（lipopolysaccharide），LPS主要可以活化何種免疫受體？",
+        options: [
+          "TLR-3",
+          "TLR-4",
+          "TLR-5",
+          "TLR-8"
+        ],
+        answer: 1,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 37
+      },
+      {
+        text: "下列何種疫苗不是減毒（attenuated）疫苗？",
+        options: [
+          "麻疹（measles）",
+          "輪狀病毒（rotavirus）",
+          "結核菌（tuberculosis）",
+          "狂犬病（rabies）"
+        ],
+        answer: 3,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 38
+      },
+      {
+        text: "下列何種細胞激素組合的作用，可促使Th2及ILC2細胞生成IL-5和IL-13？",
+        options: [
+          "IL-12／IL-18",
+          "TSLP／IL-33",
+          "IL-23／IL-1",
+          "IL-4／IL-10"
+        ],
+        answer: 1,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 39
+      },
+      {
+        text: "若病人的抗核抗體（anti-nuclear antibody）檢測結果呈現核仁型（nucleolar pattern）螢光，其自體抗體最可能的抗原為何？",
+        options: [
+          "dsDNA",
+          "RNP（ribonucleoprotein）",
+          "核仁特異性RNA",
+          "組織蛋白（histone）與DNA複合物"
+        ],
+        answer: 2,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 40
+      },
+      {
+        text: "有關C型肝炎病毒（HCV）感染之敘述，下列何者錯誤？",
+        options: [
+          "可以經由血液而傳染",
+          "可能導致癌症的產生",
+          "感染後容易造成宿主慢性疾病的產生",
+          "目前已經有對抗C型肝炎病毒感染的保護性疫苗"
+        ],
+        answer: 3,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 41
+      },
+      {
+        text: "有關EB病毒（Epstein-Barr Virus）之敘述，下列何者錯誤？",
+        options: [
+          "感染過EB病毒的人非常少",
+          "引起Burkitt lymphoma及鼻咽癌（NPC）的致病因子",
+          "感染後可能造成發燒、喉嚨痛、淋巴結腫大等症狀",
+          "可能經由跟別人共食或接吻而傳染"
+        ],
+        answer: 0,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 42
+      },
+      {
+        text: "有關人類乳突狀病毒疫苗的敘述，下列何者錯誤？",
+        options: [
+          "為virus-like particle（VLP）疫苗",
+          "目前劑型皆由肌肉注射",
+          "疫苗成分主要為病毒蛋白質E3",
+          "可預防子宮頸癌"
+        ],
+        answer: 2,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 43
+      },
+      {
+        text: "有關水痘帶狀疱疹病毒（Varicella-zoster virus, VZV）及其疾病之敘述，下列何者錯誤？",
+        options: [
+          "VZV屬於herpesvirus中的一員，其基因體為DNA",
+          "VZV感染可能會造成孩童有水痘，成人患者有帶狀疱疹臨床症狀",
+          "Acyclovir不可用於治療VZV感染",
+          "施打減毒疫苗可以預防感染"
+        ],
+        answer: 2,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 44
+      },
+      {
+        text: "關於HIV病毒定量檢驗（HIV viral load）之敘述，下列何者最不適當？",
+        options: [
+          "大部分檢驗試劑，可針對Group M基因型精確定量",
+          "0.5 log10（3倍）檢驗差異是可接受的",
+          "在低濃度病毒量時檢驗變異會加大",
+          "可以當作區別HIV-1及HIV-2的鑑別診斷方法"
+        ],
+        answer: 3,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 45
+      },
+      {
+        text: "關於HPV檢測，下列何者具有較高敏感度？",
+        options: [
+          "以核酸擴增法（nucleic acid amplification）檢測HPV DNA",
+          "以訊號放大法（signal amplification）檢測HPV DNA",
+          "抗原檢測",
+          "以原位雜交反應（in situ hybridization）檢測細胞中病毒核酸"
+        ],
+        answer: 0,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 46
+      },
+      {
+        text: "有關正黏液病毒（Orthomyxovirus）之敘述，下列何者錯誤？",
+        options: [
+          "A型及B型流感病毒皆有能力感染人類而造成疾病",
+          "病毒基因重新組合（gene reassortment）會導致抗原移型（antigen shift）而造成難以控制的大流行",
+          "有效對抗病毒之中和性抗體主要是辨認流感病毒結構上的紅血球凝集素（hemagglutinin）",
+          "A型流感病毒只會感染人類"
+        ],
+        answer: 3,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 47
+      },
+      {
+        text: "相較於第三代HIV-1篩檢試劑，第四代增加何項檢驗標的，可縮短檢驗空窗期？",
+        options: [
+          "HIV p24 Ag",
+          "HIV gp41 Ag",
+          "HIV IgM",
+          "HIV gp120 Ag"
+        ],
+        answer: 0,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 48
+      },
+      {
+        text: "抗病毒藥物Pleconaril的作用機轉為何？",
+        options: [
+          "抑制病毒脫殼",
+          "抑制病毒RNA合成",
+          "抑制病毒蛋白質合成",
+          "抑制病毒蛋白酶功能"
+        ],
+        answer: 0,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 49
+      },
+      {
+        text: "下列那些病毒在市面上同時有去活性疫苗及活性減毒疫苗兩種型式疫苗可供使用？①B型肝炎病毒 ②小兒麻痺病毒 ③流感病毒 ④德國麻疹病毒",
+        options: [
+          "①②",
+          "②③",
+          "③④",
+          "②④"
+        ],
+        answer: 1,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 50
+      },
+      {
+        text: "目前人用疫苗中，下列何者為活性減毒疫苗（attenuated vaccine）？",
+        options: [
+          "A型肝炎病毒疫苗",
+          "狂犬病毒疫苗",
+          "B型肝炎病毒疫苗",
+          "輪狀病毒疫苗"
+        ],
+        answer: 3,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 51
+      },
+      {
+        text: "有關B19細小病毒（Parvovirus B19）之敘述，下列何者錯誤？",
+        options: [
+          "病毒顆粒中具有核酸聚合酶（DNA polymerase）",
+          "病毒基因體由單股DNA所組成",
+          "第五疾病（fifth disease）的發生與它的感染有關",
+          "可能會穿過胎盤並造成胎兒的感染"
+        ],
+        answer: 0,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 52
+      },
+      {
+        text: "有關干擾素（interferon）之敘述，下列何者錯誤？",
+        options: [
+          "Ampligen及Poly rI:rC可以刺激interferon的產生",
+          "interferon-alpha及interferon-beta可以抑制某些病毒蛋白質的合成",
+          "interferon-alpha與Pleconaril常併用於治療C型肝炎",
+          "interferon-alpha可用於治療Papillomavirus"
+        ],
+        answer: 2,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 53
+      },
+      {
+        text: "關於西方墨點法（Western blot）的敘述，下列何者錯誤？",
+        options: [
+          "比起酵素免疫分析（EIA），更常用來當作篩檢試驗",
+          "比起酵素免疫分析（EIA），專一性更高",
+          "偵測HIV的抗體，以確認HIV EIA的結果",
+          "偵測HCV的抗體，也可用來確認HCV EIA的結果"
+        ],
+        answer: 0,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 54
+      },
+      {
+        text: "下列何種病毒最容易造成Vero E6細胞病變？",
+        options: [
+          "Parvovirus B19",
+          "Norovirus",
+          "Astrovirus",
+          "SARS coronavirus-2"
+        ],
+        answer: 3,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 55
+      },
+      {
+        text: "以電泳分析病毒蛋白時，蛋白通常先經sodium dodecyl sulfate（SDS）與下列何種化學藥品處理後，破壞其二級結構，再進行電泳？",
+        options: [
+          "2-mercaptoethanol",
+          "acetone",
+          "formaldehyde",
+          "chloroform"
+        ],
+        answer: 0,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 56
+      },
+      {
+        text: "下列何者與Epstein-Barr virus (EBV)感染最不相關？",
+        options: [
+          "Heterophile antibody",
+          "Downey cells (Atypical lymphocytes)",
+          "B cell outgrowth",
+          "koilocytes"
+        ],
+        answer: 3,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 57
+      },
+      {
+        text: "下列何者目前已有疫苗可供臨床使用？",
+        options: [
+          "Herpes simplex virus type 1 (HSV-1)",
+          "Epstein-Barr virus (EBV)",
+          "Varicella-zoster virus (VZV)",
+          "Cytomegalovirus (CMV)"
+        ],
+        answer: 2,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 58
+      },
+      {
+        text: "下列有關Herpes simplex virus type 1（HSV-1）的敘述，何者錯誤？",
+        options: [
+          "病毒DNA polymerase是抗病毒藥物的標的",
+          "是一種alphaherpesvirus",
+          "可引發口唇或生殖器部位的疱疹",
+          "已有減毒疫苗可供臨床使用"
+        ],
+        answer: 3,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 59
+      },
+      {
+        text: "下列何者不是Herpes simplex virus（HSV）感染導致的細胞病變？",
+        options: [
+          "多核（multinucleated）",
+          "細胞融合（syncytia）",
+          "出現於細胞核內的Cowdry type A包涵體",
+          "嗜鹼性（basophilic）包涵體"
+        ],
+        answer: 3,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 60
+      },
+      {
+        text: "下列何者為不具套膜的DNA病毒？",
+        options: [
+          "Hepatitis B virus",
+          "Vaccinia virus",
+          "Hepatitis E virus",
+          "Parvovirus B19"
+        ],
+        answer: 3,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 61
+      },
+      {
+        text: "下列何種病毒的感染，可造成出血性膀胱炎（hemorrhagic cystitis）？",
+        options: [
+          "Adenovirus type 11",
+          "Adenovirus type 5",
+          "Human Bocavirus",
+          "Poxvirus"
+        ],
+        answer: 0,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 62
+      },
+      {
+        text: "下列何種病毒感染最有可能造成關節炎的症狀？",
+        options: [
+          "Cytomegalovirus",
+          "Parvovirus B19",
+          "Adenovirus type 4",
+          "Herpes simplex virus type 2"
+        ],
+        answer: 1,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 63
+      },
+      {
+        text: "有關Dane particle所具有的特性，下列何者錯誤？",
+        options: [
+          "直徑為22 nm",
+          "含有DNA polymerase",
+          "具有感染力",
+          "可誘發anti-HBs抗體產生"
+        ],
+        answer: 0,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 64
+      },
+      {
+        text: "下列何種B型肝炎病毒蛋白質所引發之抗體，與病毒複製之顯著下降最相關？",
+        options: [
+          "核心（core）抗原",
+          "e抗原",
+          "聚合酶（polymerase）蛋白質",
+          "X蛋白質"
+        ],
+        answer: 1,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 65
+      },
+      {
+        text: "有關檢體來源及其可得知病毒感染的配對，下列何者錯誤？",
+        options: [
+          "尿液檢測／Human T-lymphotropic virus type 2（HTLV-2）",
+          "血液／Human cytomegalovirus",
+          "子宮頸抹片／Human papillomavirus",
+          "腦脊髓液／Parvovirus B19"
+        ],
+        answer: 0,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 66
+      },
+      {
+        text: "有關HBe抗原的敘述，下列何者正確？",
+        options: [
+          "源自於HBV Gene S",
+          "僅存在於病毒顆粒內",
+          "HBe抗體（Anti-HBe）陽性為黃疸症狀的重要指標",
+          "HBe抗原陽性代表活動性B型肝炎"
+        ],
+        answer: 3,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 67
+      },
+      {
+        text: "有關單純疱疹病毒（Herpes simplex virus, HSV）的敘述，下列何者錯誤？",
+        options: [
+          "主要經由接觸傳染",
+          "感染後造成多核大細胞（multinucleated giant cell）",
+          "感染細胞內出現Owl's eye包涵體",
+          "感染HSV第一型及第二型所需的治療藥物是相同的"
+        ],
+        answer: 2,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 68
+      },
+      {
+        text: "有關B型流感病毒的敘述，下列何者最不適當？",
+        options: [
+          "帶有片段RNA基因組",
+          "基因組中不帶有NS1病毒蛋白質的基因",
+          "基因組中帶有M1病毒蛋白質的基因",
+          "病毒顆粒上帶有Hemagglutinin（HA）蛋白質"
+        ],
+        answer: 1,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 69
+      },
+      {
+        text: "有關伊科病毒（Echovirus）的敘述，下列何者錯誤？",
+        options: [
+          "屬於小RNA病毒科（Picornaviridae）",
+          "其中只有Echovirus 30可以感染人類",
+          "可能會造成中樞神經症狀",
+          "可能感染嬰幼兒"
+        ],
+        answer: 1,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 70
+      },
+      {
+        text: "下列何種病毒屬於絲狀病毒科（Filoviridae）？",
+        options: [
+          "Rift Valley Fever virus",
+          "Marburg virus",
+          "Rabies virus",
+          "Yellow fever virus"
+        ],
+        answer: 1,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 71
+      },
+      {
+        text: "下列何種方法為C型肝炎病毒實驗室診斷的最佳確診標準？",
+        options: [
+          "ELISA抗原檢查",
+          "ELISA抗體檢查",
+          "重組免疫點墨（RIBA）分析",
+          "核酸分子放大（NAAT）方法"
+        ],
+        answer: 3,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 72
+      },
+      {
+        text: "有關披膜病毒科（Togaviridae）與黃病毒科（Flaviviridae）的敘述，下列何者錯誤？",
+        options: [
+          "均為具有套膜包裹的單股正性RNA病毒",
+          "兩病毒科的RNA，其5'端有cap，而且結構基因也皆在5'端",
+          "兩病毒科均含有arbovirus",
+          "兩病毒科中的節媒病毒，大多能刺激宿主產生中和性抗體"
+        ],
+        answer: 1,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 73
+      },
+      {
+        text: "下列病毒中，何者基因體不具有3'pol-A的尾端結構？",
+        options: [
+          "Retrovirus",
+          "Coronavirus",
+          "Togavirus",
+          "Bunyavirus"
+        ],
+        answer: 3,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 74
+      },
+      {
+        text: "有關小兒麻痺病毒（Poliovirus）的敘述，下列何者錯誤？",
+        options: [
+          "無法以細胞株培養，只能仰賴分子生物學方式檢測",
+          "使用減毒活病毒疫苗仍可能有vaccine-derived poliovirus（VDPV）所造成的疾病風險",
+          "可再細分為type 1、2、3三型",
+          "其RNA基因組的5'端非轉譯區帶有internal ribosome entry site結構"
+        ],
+        answer: 0,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 75
+      },
+      {
+        text: "下列何種病毒培養時必須在第四級生物安全實驗室操作？",
+        options: [
+          "A型流感病毒H5N1",
+          "馬堡病毒（Marburg virus）",
+          "輪狀病毒（Rotavirus）",
+          "人類偏肺病毒（Human metapneumovirus）"
+        ],
+        answer: 1,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 76
+      },
+      {
+        text: "有關副黏液病毒科（Paramyxoviridae）的敘述，下列何者最不適當？",
+        options: [
+          "病毒顆粒包裹一條負股RNA基因組",
+          "具有外套膜",
+          "病毒RNA在細胞核中複製及轉錄",
+          "病毒顆粒中的N蛋白質會包覆病毒RNA基因組"
+        ],
+        answer: 2,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 77
+      },
+      {
+        text: "腸病毒與鼻病毒同屬小RNA病毒科，下列敘述何者錯誤？",
+        options: [
+          "腸病毒耐酸（pH 3.0），鼻病毒不耐酸",
+          "兩者皆對ether處理有抗性（resistance）",
+          "兩者皆是positive-sense, single-stranded RNA virus",
+          "兩者病毒顆粒密度相同"
+        ],
+        answer: 3,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 78
+      },
+      {
+        text: "下列何者無法用來追蹤HIV-1病人接受雞尾酒療法的成效？",
+        options: [
+          "bDNA assay",
+          "microsphere immunoassay",
+          "NASBA",
+          "real-time RT-PCR"
+        ],
+        answer: 1,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 79
+      },
+      {
+        text: "呼吸道融合病毒（Respiratory syncytial virus）感染之患者可用下列何者治療？",
+        options: [
+          "Acyclovir",
+          "Cidofovir",
+          "Ganciclovir",
+          "Ribavirin"
+        ],
+        answer: 3,
+        explanation: "",
+        year: 113, exam: "第一次", serial: 80
+      },
+{
+        text: "下列有關主要組織相容性複合體（MHC）的敘述，何者錯誤？",
+        options: [
+          "MHC class I由一條α chain和一條β2-microglobulin組合而成",
+          "MHC class II由一條α chain和一條β chain組合而成",
+          "MHC class I可結合8～10個胺基酸組成的胜肽抗原",
+          "MHC class II可結合2～5個胺基酸組成的胜肽抗原"
+        ],
+        answer: 3,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 1
+      },
+      {
+        text: "下列何種細胞激素由樹突細胞和巨噬細胞分泌，可促使T細胞往Th1分化？",
+        options: [
+          "IL-4",
+          "IL-6",
+          "IL-10",
+          "IL-12"
+        ],
+        answer: 3,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 2
+      },
+      {
+        text: "下列分子與其配體（ligand）的組合，何者錯誤？",
+        options: [
+          "ICAM-1：DC-SIGN",
+          "CD2：LFA-3",
+          "VCAM-1：VLA-4",
+          "ICAM-3：LFA-1"
+        ],
+        answer: 0,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 3
+      },
+      {
+        text: "下列有關淋巴球受體的生成過程中，何者會發生體細胞超突變（somatic hypermutation）？",
+        options: [
+          "T細胞受體（TCR）的重組",
+          "B細胞受體（BCR）的重組",
+          "NK細胞受體（NKR）的重組",
+          "補體（complement）的重組"
+        ],
+        answer: 1,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 4
+      },
+      {
+        text: "B細胞受體（BCR）的生成，由胞膜型IgD轉化成分泌型IgD，最主要由下列何種機制協助？",
+        options: [
+          "RNA剪接（splicing）",
+          "RNA衰變（decay）",
+          "DNA修復（repair）",
+          "DNA擴增（amplification）"
+        ],
+        answer: 0,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 5
+      },
+      {
+        text: "小腸上皮內淋巴球（intraepithelial lymphocytes）表現的αE：β7 integrin分子，又稱為下列何者？",
+        options: [
+          "CD11",
+          "CD18",
+          "CD56",
+          "CD103"
+        ],
+        answer: 3,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 6
+      },
+      {
+        text: "下列有關補體活化調控蛋白之敘述，何者正確？",
+        options: [
+          "主要之功能為調節補體活化的速度快慢與程度大小",
+          "C1 inhibitor、C4-binding protein及decay-accelerating factor為游離型的補體活化調控蛋白",
+          "Protectin、carboxypeptidase N及CRIg為膜結合型的補體活化調控蛋白",
+          "C4-binding protein及decay-accelerating factor都是透過取代C4b2a中的C2a分子來調控補體之活化"
+        ],
+        answer: 3,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 7
+      },
+      {
+        text: "下列有關免疫細胞之敘述，何者錯誤？",
+        options: [
+          "記憶性B細胞表面有IgG作為抗原受體",
+          "記憶性T細胞表面會表現CD45RA",
+          "記憶性T細胞表面增加了細胞黏附分子的表現",
+          "胸腺細胞（thymocyte）早期的細胞表面分子有CD44及CD25"
+        ],
+        answer: 1,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 8
+      },
+      {
+        text: "下列何者不屬於調節性T細胞（regulatory T cells）？",
+        options: [
+          "nTreg cells",
+          "Th2 cells",
+          "Tr1 cells",
+          "iTreg cells"
+        ],
+        answer: 1,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 9
+      },
+      {
+        text: "下列何者不屬於抗原呈獻細胞？",
+        options: [
+          "Langerhans cells",
+          "Plasmacytoid dendritic cells",
+          "B cells",
+          "Neutrophils"
+        ],
+        answer: 3,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 10
+      },
+      {
+        text: "下列何者不是活化後的B細胞（activated B cells）在次級淋巴器官中的位置？",
+        options: [
+          "淋巴結皮質區（cortex）",
+          "生發中心（germinal center）",
+          "初級濾泡（primary follicles）",
+          "脾臟的邊區（marginal zone）"
+        ],
+        answer: 2,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 11
+      },
+      {
+        text: "下列有關prozone effect的敘述，何者錯誤？",
+        options: [
+          "會產生偽陰性",
+          "抗體量太多",
+          "需要序列稀釋",
+          "反應太久造成"
+        ],
+        answer: 3,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 12
+      },
+      {
+        text: "在血清檢測中，下列有關補體的敘述，何者錯誤？",
+        options: [
+          "補體存在，可能造成凝集反應的偽陰性",
+          "補體存在，可能造成血球凝集反應之溶血現象",
+          "在56℃作用30分鐘可將補體去活化",
+          "補體去活化後超過4小時，可以56℃作用10分鐘再次去活化"
+        ],
+        answer: 0,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 13
+      },
+      {
+        text: "下列何者不是單核球（monocyte）的表面分子？",
+        options: [
+          "CD14",
+          "CD11b",
+          "CD16",
+          "CD56"
+        ],
+        answer: 3,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 14
+      },
+      {
+        text: "下列何種物質不能當作淋巴球增生試驗的刺激物？",
+        options: [
+          "PHA",
+          "PWM",
+          "Anti-CD14 antibody",
+          "Anti-CD3 antibody"
+        ],
+        answer: 2,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 15
+      },
+      {
+        text: "下列何者屬於HIV-2的套膜蛋白？①p24 ②p26 ③gp34 ④gp41 ⑤gp120 ⑥gp140",
+        options: [
+          "①④",
+          "②③",
+          "③⑥",
+          "④⑤"
+        ],
+        answer: 2,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 16
+      },
+      {
+        text: "下列何者最容易造成HIV酵素免疫法診斷的偽陰性結果反應？",
+        options: [
+          "自體免疫疾病（autoimmune disorders）",
+          "慢性腎衰竭（chronic renal failure）",
+          "酒精性肝炎（alcoholic hepatitis）",
+          "骨髓移植（bone marrow transplantation）"
+        ],
+        answer: 3,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 17
+      },
+      {
+        text: "下列何種疾病不是經由埃及斑蚊（Aedes aegypti）傳播？",
+        options: [
+          "西尼羅河熱症（West Nile fever）",
+          "屈公病（Chikungunya）",
+          "茲卡病毒症（Zika virus infection）",
+          "加利福尼亞腦炎（California encephalitis）"
+        ],
+        answer: 3,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 18
+      },
+      {
+        text: "下列何者是梅毒的病原菌？",
+        options: [
+          "Treponema carateum",
+          "Treponema endemicum",
+          "Treponema pallidum",
+          "Treponema pertenue"
+        ],
+        answer: 2,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 19
+      },
+      {
+        text: "下列何種免疫細胞透過FcγR和FcαR，與大型寄生蟲體表的IgG和IgA抗體結合後進行毒殺作用？",
+        options: [
+          "肥大細胞",
+          "嗜酸性球",
+          "B細胞",
+          "T細胞"
+        ],
+        answer: 1,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 20
+      },
+      {
+        text: "Goodpasture's症候群（Goodpasture's syndrome）之病理機制，主要是屬於第幾型過敏反應？",
+        options: [
+          "第一型",
+          "第二型",
+          "第三型",
+          "第四型"
+        ],
+        answer: 1,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 21
+      },
+      {
+        text: "鎳（nickel）可以結合在下列那一種受體的組胺酸（histidine）上，而誘發先天性及發炎性過敏反應？",
+        options: [
+          "B cell receptor",
+          "T cell receptor",
+          "Toll-like receptor-4",
+          "IL-4 receptor"
+        ],
+        answer: 2,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 22
+      },
+      {
+        text: "下列何種試驗可以輔助診斷類風濕性關節炎？",
+        options: [
+          "Anti-smooth muscle antibodies",
+          "Anti-mitochondrial antibodies",
+          "Anti-cyclic citrullinated peptide antibodies",
+          "Anti-islet cell antibodies"
+        ],
+        answer: 2,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 23
+      },
+      {
+        text: "下列有關自體免疫肝炎（autoimmune hepatitis）之敘述，何者正確？",
+        options: [
+          "好發於年輕男性",
+          "病人血中常能測到高價數的抗平滑肌抗體（anti-smooth muscle antibody）",
+          "病人血中常能測到高價數的抗粒線體抗體（anti-mitochondrial antibody）",
+          "病人血清中IgM抗體顯著增加"
+        ],
+        answer: 1,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 24
+      },
+      {
+        text: "下列何種抗體與CREST syndrome最相關？",
+        options: [
+          "Anti-Jo-1",
+          "Anti-Scl-70",
+          "Anti-centromere",
+          "Anti-SS-B/La"
+        ],
+        answer: 2,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 25
+      },
+      {
+        text: "以間接免疫螢光染色法分析抗核抗體，呈現均勻型（homogeneous）時，其抗核抗體可能為下列何者？①anti-dsDNA ②anti-ssDNA ③anti-DNP ④anti-histone ⑤anti-RNP",
+        options: [
+          "僅①②",
+          "僅③④⑤",
+          "僅①②③④",
+          "①②③④⑤"
+        ],
+        answer: 2,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 26
+      },
+      {
+        text: "下列有關原發性修格蘭氏症候群（Sjögren's syndrome）之敘述，何者錯誤？",
+        options: [
+          "抗SS-B抗體和新生兒血管炎有關",
+          "病人血中可發現ANA抗體",
+          "病人血中可發現Ro或La抗體",
+          "病人出現乾口乾眼症狀"
+        ],
+        answer: 0,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 27
+      },
+      {
+        text: "下列何者是自體免疫性甲狀腺炎中最主要的浸潤細胞？",
+        options: [
+          "嗜中性球",
+          "肥大細胞",
+          "巨噬細胞",
+          "淋巴球"
+        ],
+        answer: 3,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 28
+      },
+      {
+        text: "下列關於組織不相容之敘述，何者正確？",
+        options: [
+          "同卵雙生的兩人，其人類白血球抗原（HLA）不同",
+          "殺傷細胞免疫球蛋白樣受體（KIR）在移植反應扮演重要角色",
+          "動物沒有MHC，移植動物來源組織至人體，不會發生排斥問題",
+          "第一型組織相容相關鏈蛋白A（MICA）與器官移植排斥完全無關"
+        ],
+        answer: 1,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 29
+      },
+      {
+        text: "下列有關淋巴球微毒殺試驗（lymphocyte microcytotoxicity test）敘述，何者錯誤？",
+        options: [
+          "使用B細胞評估第二型組織抗原相容程度",
+          "使用T細胞評估第一型組織抗原相容程度",
+          "加入anti-human globulin（AHG）抗體，以增加檢測靈敏度",
+          "待測樣本為補體，檢測試劑為捐贈者的細胞"
+        ],
+        answer: 3,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 30
+      },
+      {
+        text: "Xenograft為下列何者？",
+        options: [
+          "自身組織移植至另一部位",
+          "同卵雙生間的移植",
+          "移植動物來源組織至人體",
+          "同種不同基因型個體間的移植"
+        ],
+        answer: 2,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 31
+      },
+      {
+        text: "若於器官移植時監測FoxP3，主要作為何種細胞的檢測？",
+        options: [
+          "調節型B細胞",
+          "調節型T細胞",
+          "調節型NK細胞",
+          "調節型嗜中性球"
+        ],
+        answer: 1,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 32
+      },
+      {
+        text: "因腺核苷去氨酶（adenosine deaminase）基因突變造成的嚴重混合型免疫缺陷症（SCID），會影響那些細胞的生成？①T細胞 ②B細胞 ③NK細胞",
+        options: [
+          "僅③",
+          "僅②③",
+          "僅①②",
+          "①②③"
+        ],
+        answer: 3,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 33
+      },
+      {
+        text: "免疫抑制劑fingolimod（FTY720）可用於治療多發性硬化症，其治療機轉為何？",
+        options: [
+          "抑制淋巴球的DNA合成",
+          "抑制淋巴球從淋巴結移出",
+          "抑制淋巴球的calcineurin訊息傳遞",
+          "抑制淋巴球的mTOR訊息傳遞"
+        ],
+        answer: 1,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 34
+      },
+      {
+        text: "下列何者不是TAA（tumor associated antigens）？",
+        options: [
+          "Melanoma antigen gene（MAGE）",
+          "Prostate-specific antigen（PSA）",
+          "BCR/ABL fusion protein",
+          "Human epithelial growth factor 2（HER2）"
+        ],
+        answer: 2,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 35
+      },
+      {
+        text: "腫瘤組織中大量浸潤何種免疫細胞最可能導致惡化？",
+        options: [
+          "B細胞",
+          "記憶型T細胞",
+          "毒殺型T細胞",
+          "調節型T細胞"
+        ],
+        answer: 3,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 36
+      },
+      {
+        text: "下列為不活化（inactivated）疫苗的特性，但何者除外？",
+        options: [
+          "較減毒疫苗安全",
+          "通常不需冷藏",
+          "常需要施打數劑",
+          "一般比減毒疫苗效力強"
+        ],
+        answer: 3,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 37
+      },
+      {
+        text: "下列何者不屬於常用的次單位疫苗（subunit vaccine）？",
+        options: [
+          "類毒素",
+          "莢膜多醣體",
+          "重組表面抗原",
+          "mRNA"
+        ],
+        answer: 3,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 38
+      },
+      {
+        text: "下列何種新冠肺炎（COVID-19）疫苗原理應用mRNA技術製成？",
+        options: [
+          "Spikevax（莫德納, Moderna）",
+          "Covishield（AZ, AstraZeneca）",
+          "Covovax（諾瓦瓦克斯, Novavax）",
+          "Medigen（高端）"
+        ],
+        answer: 0,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 39
+      },
+      {
+        text: "癌症免疫治療主要利用免疫檢查點（immune checkpoint）的抑制劑，下列何者不被歸類於免疫檢查點？",
+        options: [
+          "CTLA-4",
+          "PD-1",
+          "PD-L1",
+          "Flt-3"
+        ],
+        answer: 3,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 40
+      },
+      {
+        text: "下列抗病毒藥物，何者不是透過chain termination進而終止病毒核酸複製？",
+        options: [
+          "ganciclovir（GCV）",
+          "lamivudine（3TC）",
+          "foscarnet（PFA）",
+          "zidovudine（AZT）"
+        ],
+        answer: 2,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 41
+      },
+      {
+        text: "有關病毒分子檢驗所使用的探針TaqMan及molecular beacon之敘述，下列何者錯誤？",
+        options: [
+          "兩者皆具有螢光報導分子（fluorescent reporter）及猝滅劑（quencher）",
+          "後者形成髮夾型（hairpin）二次結構",
+          "兩者在反應中之活性皆會被DNA聚合酶的內切酶（endonuclease）破壞",
+          "兩者皆可用於定量病毒核酸"
+        ],
+        answer: 2,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 42
+      },
+      {
+        text: "一位學齡前幼童出現了非細菌性腦炎，最不可能是下列何種病毒所引發？",
+        options: [
+          "Coxsackievirus",
+          "herpes simplex virus type 2",
+          "Japanese encephalitis virus",
+          "human papillomavirus"
+        ],
+        answer: 3,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 43
+      },
+      {
+        text: "目前臨床使用的B型肝炎疫苗是那一類型？",
+        options: [
+          "去活化病毒疫苗",
+          "蛋白次單位疫苗",
+          "DNA疫苗",
+          "RNA疫苗"
+        ],
+        answer: 1,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 44
+      },
+      {
+        text: "有關傳統PCR的敘述，下列何者最不適當？",
+        options: [
+          "其原理可分成三階段：denature、annealing及extension",
+          "過高的annealing溫度會降低檢測的靈敏度（sensitivity）",
+          "需使用耐高溫的RNA polymerase",
+          "使用低保真度（low fidelity）的酵素進行增幅的錯誤率會較高"
+        ],
+        answer: 2,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 45
+      },
+      {
+        text: "有關等溫核酸擴增方法（isothermal nucleic acid amplification method）用於臨床病毒檢測的敘述，下列何者最適當？",
+        options: [
+          "nucleic acid sequence-based amplification（NASBA）屬於此種檢測法",
+          "較少用於偵測RNA病毒",
+          "進行strand displacement amplification（SDA）檢測設計相對容易且可同時偵測多種不同亞型的病毒",
+          "loop-mediated isothermal amplification（LAMP）需要共2種引子對，即外引子對與內引子對，來進行反應"
+        ],
+        answer: 0,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 46
+      },
+      {
+        text: "有關IgM enzyme immunoassay（EIA）的敘述，下列何者最不適當？",
+        options: [
+          "可使用的檢體包括血清及CSF",
+          "檢體中若含有rheumatoid factor（RF）會造成偽陰性（false negative）",
+          "某些病毒感染（ex. West Nile virus）其IgM抗體陽性反應可長達3個月",
+          "檢體中含有高濃度IgG可能會造成偽陰性（false negative）的結果"
+        ],
+        answer: 1,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 47
+      },
+      {
+        text: "有關應用LAMP技術於病毒快速診斷的敘述，下列何者最不適當？",
+        options: [
+          "主要使用一種DNA polymerase進行反應",
+          "只需要兩對具專一性的引子進行反應",
+          "可用螢光方式進一步設計成可以定量的檢測方式Q-LAMP",
+          "目前已有產品應用此技術於病毒檢測"
+        ],
+        answer: 1,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 48
+      },
+      {
+        text: "有關定量病毒中和性抗體試驗的敘述，下列何者最不適當？",
+        options: [
+          "須包含陽性血清對照",
+          "可以定量病毒斑（plaque）減少的數目",
+          "若病毒無法培養時可以用假性病毒（pseudovirus）代替",
+          "血清不應在56℃處理30分鐘以免破壞抗體"
+        ],
+        answer: 3,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 49
+      },
+      {
+        text: "有關病毒感染性疾病與可能檢測出的臨床病毒，下列何者配對最不適當？",
+        options: [
+          "呼吸道（respiratory tract）／paramyxoviruses",
+          "斑丘疹（maculopapular rash）／adenovirus",
+          "尿道（urinary tract）／HHV6",
+          "水疱疹（vesicular rash）／HSV"
+        ],
+        answer: 2,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 50
+      },
+      {
+        text: "下列病毒感染，何者最可能造成嬰幼兒心肌炎？",
+        options: [
+          "腺病毒",
+          "腸病毒",
+          "巨大細胞病毒",
+          "人類多瘤病毒"
+        ],
+        answer: 1,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 51
+      },
+      {
+        text: "以呼吸道檢體進行病毒培養，發現培養於A549細胞時，出現葡萄狀的細胞聚簇（grape-like clusters）細胞病變。最可能分離出下列何種病毒？",
+        options: [
+          "流感病毒（influenza virus）",
+          "副流感病毒（parainfluenza virus）",
+          "腺病毒（adenovirus）",
+          "巨細胞病毒（cytomegalovirus）"
+        ],
+        answer: 2,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 52
+      },
+      {
+        text: "下列何項檢驗不是成人CMV disease指標？",
+        options: [
+          "CMV IgM",
+          "尿液病毒培養（urine CMV virus culture）",
+          "血液病毒培養（blood CMV virus culture）",
+          "血漿CMV核酸定量（plasma CMV DNA viral load）"
+        ],
+        answer: 1,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 53
+      },
+      {
+        text: "下列何種藥物可用來抑制第一型人類免疫缺乏病毒（HIV-1）最終組裝（assembly）和成熟（maturation）步驟所需的酵素活性？",
+        options: [
+          "反轉錄酶抑制劑（reverse transcriptase inhibitor）",
+          "蛋白酶抑制劑（protease inhibitor）",
+          "融合抑制劑（fusion inhibitor）",
+          "嵌入酶抑制劑（integrase inhibitor）"
+        ],
+        answer: 1,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 54
+      },
+      {
+        text: "目前開發HIV-1疫苗的過程中，遭遇到的最大困難為何？",
+        options: [
+          "HIV-1感染後體內不會激發抗體的產生",
+          "科學家無法確認HIV-1感染細胞的機制",
+          "HIV-1的表面抗原非常容易發生突變",
+          "HIV-1並不會釋放到血液中，因此抗體無法阻斷其感染細胞的能力"
+        ],
+        answer: 2,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 55
+      },
+      {
+        text: "下列何種技術或系統無法用來進行病毒的培養？",
+        options: [
+          "活體實驗動物（live experimental animal）",
+          "雞胚胎蛋（embryonated chicken egg）",
+          "初代細胞培養（primary cell culture）",
+          "血瓊脂（blood agar）"
+        ],
+        answer: 3,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 56
+      },
+      {
+        text: "目前科學家認為克魯氏症（Kuru）是由prion所致的人類疾病，下列敘述何者正確？",
+        options: [
+          "類似典型的帕金森疾病，限於老人",
+          "退化性人類傳染性海綿狀腦病",
+          "食物經高溫烹煮後再食用，可避免此疾病的傳播",
+          "此疾病的傳染途徑和狂牛病不相同"
+        ],
+        answer: 1,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 57
+      },
+      {
+        text: "下列何者不是human papillomavirus（HPV）的病毒特性？",
+        options: [
+          "基因體是double-stranded circular DNA",
+          "在細胞核進行複製，在細胞質包裹病毒顆粒",
+          "依感染細胞型態，可引起溶解性感染或潛伏性感染",
+          "高危險性的HPV E6蛋白會與細胞中p53結合，進而活化端粒酶，與抑制細胞凋亡"
+        ],
+        answer: 1,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 58
+      },
+      {
+        text: "當B型肝炎患者在治療過程中，HBV DNA和ALT數值持續波動，但HBe在血清轉換（seroconversion）過程中呈現陰性，最有可能是發生下列何種病毒蛋白的突變？",
+        options: [
+          "Core",
+          "Pre-Core",
+          "S",
+          "Pre-S"
+        ],
+        answer: 1,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 59
+      },
+      {
+        text: "一般poxvirus的天然宿主都是人類以外的脊椎動物，下列何者除外？",
+        options: [
+          "orf virus",
+          "monkeypox virus",
+          "Tanapox virus",
+          "smallpox virus"
+        ],
+        answer: 3,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 60
+      },
+      {
+        text: "有關parvovirus B19的生物特性，下列何者最不適當？",
+        options: [
+          "具雙股DNA基因體",
+          "不具套膜",
+          "可經呼吸道感染",
+          "可感染紅血球前驅細胞"
+        ],
+        answer: 0,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 61
+      },
+      {
+        text: "造成傳染性紅斑（erythema infectiosum）的病毒為何？",
+        options: [
+          "measles virus",
+          "human herpesvirus 6",
+          "human parvovirus B19",
+          "echovirus 16"
+        ],
+        answer: 2,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 62
+      },
+      {
+        text: "有關人類乳突病毒（HPV），下列敘述何者最不適當？",
+        options: [
+          "是一種常見的性行為傳染疾病（sexually transmitted disease）",
+          "高危險型HPV可能導致肛門癌",
+          "疣（warts）是兒童和年輕人中最常見的HPV感染",
+          "可感染人類的黏膜和皮膚，多數感染者均有明顯症狀"
+        ],
+        answer: 3,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 63
+      },
+      {
+        text: "下列何者的產生是顯示EBV進入lytic cycle的第一個徵象？",
+        options: [
+          "early antigen（EA-R）",
+          "anti-EBV nuclear antigen（anti-EBNA）",
+          "viral capsid antigen（VCA）",
+          "EBV nuclear antigen（EBNA）"
+        ],
+        answer: 0,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 64
+      },
+      {
+        text: "下列何者為診斷新生兒感染B型肝炎病毒最佳的方式？",
+        options: [
+          "病毒培養",
+          "PCR",
+          "血清學",
+          "HLA基因分型"
+        ],
+        answer: 1,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 65
+      },
+      {
+        text: "Acyclovir可抑制下列何者之功能？",
+        options: [
+          "thymidine kinase",
+          "viral DNA polymerase",
+          "neuraminidase",
+          "hemagglutinin"
+        ],
+        answer: 1,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 66
+      },
+      {
+        text: "有關冠狀病毒（coronavirus）的敘述，下列何者最不適當？",
+        options: [
+          "成熟病毒顆粒具有外套膜（envelope）",
+          "病毒基因組為一條正向（positive-sense）RNA",
+          "結構蛋白質M結合在病毒核酸上以穩定核酸結構",
+          "S（spike）結構蛋白質可與細胞受體結合"
+        ],
+        answer: 2,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 67
+      },
+      {
+        text: "有關野生株小兒麻痺病毒的敘述，下列何者最不合適？",
+        options: [
+          "屬於微小RNA病毒科（Picornaviridae）",
+          "感染後若造成poliomyelitis，致死率可到2～5％",
+          "感染多年後仍有可能發生後小兒麻痺症狀（post-polio syndrome）",
+          "在大多數國家仍可發現野生株小兒麻痺病毒"
+        ],
+        answer: 3,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 68
+      },
+      {
+        text: "小RNA病毒科中，下列何者沒有疫苗可用於疾病預防？",
+        options: [
+          "小兒麻痺病毒",
+          "腸病毒A71型",
+          "A型肝炎病毒",
+          "克沙奇病毒B3"
+        ],
+        answer: 3,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 69
+      },
+      {
+        text: "下列何者病毒不是經由蚊蟲媒介？",
+        options: [
+          "hantavirus",
+          "Bunyamwera virus",
+          "Chikungunya virus",
+          "Japanese encephalitis virus"
+        ],
+        answer: 0,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 70
+      },
+      {
+        text: "下列何者最符合冠狀病毒之特性？",
+        options: [
+          "正向RNA基因體，由單一RNA製造結構蛋白",
+          "負向RNA基因體，由單一RNA製造酵素蛋白",
+          "正向RNA基因體，由數條mRNA製造個別蛋白",
+          "負向RNA基因體，由數條mRNA製造個別蛋白"
+        ],
+        answer: 2,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 71
+      },
+      {
+        text: "有關呼吸道融合病毒（respiratory syncytial virus）之敘述，下列何者錯誤？",
+        options: [
+          "屬於肺病毒科（Pneumoviridae）的一員",
+          "具套膜，單股正向RNA基因體之病毒",
+          "可在HEp-2細胞中生長",
+          "病毒F蛋白質（F protein）可用於疫苗之製作"
+        ],
+        answer: 1,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 72
+      },
+      {
+        text: "有關登革病毒的敘述，下列何者錯誤？",
+        options: [
+          "主要由埃及斑蚊叮咬傳播",
+          "具有套膜及正向單股RNA基因，複製時產生26S mRNA",
+          "實驗室常使用C6/36細胞來培養分離病毒",
+          "抗體依賴促進現象（ADE）為造成登革熱重症的一種原因"
+        ],
+        answer: 1,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 73
+      },
+      {
+        text: "PCR腸病毒檢測的primer最主要設計在病毒基因的那個區域？",
+        options: [
+          "5' UTR",
+          "3' UTR",
+          "3D RdRp",
+          "3C protease"
+        ],
+        answer: 0,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 74
+      },
+      {
+        text: "有關Bunyaviridae病毒特性的敘述，下列何者錯誤？",
+        options: [
+          "severe fever with thrombocytopenia syndrome virus以蜱蟲為傳播媒介，感染後容易發生血小板低下症",
+          "克里米亞—剛果出血熱病毒（Crimean-Congo hemorrhagic fever virus）之感染主要由蚊子傳播",
+          "因為不會直接人傳人，流行病學的範圍和特定的節肢動物媒介分布的地點相符",
+          "California encephalitis virus及La Crosse virus皆由蚊子傳播"
+        ],
+        answer: 1,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 75
+      },
+      {
+        text: "有關冠狀病毒（coronavirus）之敘述，下列何者錯誤？",
+        options: [
+          "此病毒具有最長的線狀、正向單股RNA基因體",
+          "病毒感染細胞後，在宿主細胞的粗糙內質網組裝",
+          "人類感染的症狀大部分類似普通感冒（common cold）",
+          "感染人類的病毒，都以ACE2作為主要受體（receptor）"
+        ],
+        answer: 3,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 76
+      },
+      {
+        text: "有關狂犬病毒（rabies virus）的敘述，下列何者錯誤？",
+        options: [
+          "感染初期並不會產生任何免疫反應及症狀",
+          "可用PCR在被感染動物的口水中偵測病毒存在",
+          "狂犬病毒可引起恐水症（hydrophobia）",
+          "病毒主要在中樞神經系統大量複製並破壞，不會散播到其它器官或腺體"
+        ],
+        answer: 3,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 77
+      },
+      {
+        text: "有關流感病毒感染細胞過程的敘述，下列何者最不適當？",
+        options: [
+          "A型流感病毒顆粒上的NA為主要結合細胞受體的病毒蛋白質",
+          "人類季節性A型流感H3N2亞型受體為alpha 2,6鏈結之sialic acid",
+          "病毒與受體結合後，可經由細胞內吞作用（endocytosis）使病毒顆粒進入細胞",
+          "病毒之基因組會被送入細胞核進行RNA複製及mRNA轉錄"
+        ],
+        answer: 0,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 78
+      },
+      {
+        text: "有關腸病毒D68型的敘述，下列何者較為適當？",
+        options: [
+          "可用70％酒精去活化",
+          "屬於小RNA病毒科（Picornaviridae）",
+          "病毒顆粒具有外套膜",
+          "病毒RNA在細胞核中複製"
+        ],
+        answer: 1,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 79
+      },
+      {
+        text: "懷疑congenital rubella syndrome（CRS）時，在嬰兒幾個月大時採集血液檢測IgM反應，可得較好的診斷？",
+        options: [
+          "3個月",
+          "7個月",
+          "12個月",
+          "18個月"
+        ],
+        answer: 0,
+        explanation: "",
+        year: 113, exam: "第二次", serial: 80
+      },
+{
+        text: "免疫球蛋白的兩個重鏈（heavy chain）之間依靠下列何者結合？",
+        options: [
+          "氫鍵",
+          "凡得瓦爾力",
+          "雙硫鍵",
+          "離子鍵"
+        ],
+        answer: 2,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 1
+      },
+      {
+        text: "組成免疫球蛋白輕鏈的κ（kappa）和λ（lambda）在人類製造相對量的比例為何？",
+        options: [
+          "1：2",
+          "2：1",
+          "1：20",
+          "20：1"
+        ],
+        answer: 1,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 2
+      },
+      {
+        text: "T細胞可透過何種細胞激素活化巨噬細胞，使其具有更強的殺菌能力？",
+        options: [
+          "IFN-γ",
+          "TGF-β",
+          "IL-5",
+          "IL-13"
+        ],
+        answer: 0,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 3
+      },
+      {
+        text: "下列何者在T細胞受體複合體引起去磷酸化（dephosphorylation）的訊息傳遞？",
+        options: [
+          "ZAP-70",
+          "CD45",
+          "Syk",
+          "Lck"
+        ],
+        answer: 1,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 4
+      },
+      {
+        text: "下列何者較不參與血中淋巴球移動至腸道的過程？",
+        options: [
+          "CCL28",
+          "CCR10",
+          "CCR9",
+          "CCR6"
+        ],
+        answer: 3,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 5
+      },
+      {
+        text: "下列有關小腸上皮內淋巴球（intraepithelial lymphocytes, IELs）的敘述，何者錯誤？",
+        options: [
+          "IELs細胞內的顆粒含有perforin和granzymes",
+          "IELs細胞表面可表現趨化激素受體CCR9",
+          "A型IELs表現α:β TCR且具有CD8α:α",
+          "腸道上皮細胞受刺激時可分泌IL-15活化IELs"
+        ],
+        answer: 2,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 6
+      },
+      {
+        text: "下列有關對抗細菌細胞壁的抗菌蛋白酶之敘述，何者錯誤？",
+        options: [
+          "包括lysozyme及secretory phospholipase A2",
+          "Lysozyme是一種glycosidase，能夠破壞細菌細胞壁成分peptidoglycan之化學鍵",
+          "Lysozyme對於革蘭氏陰性菌細胞壁之分解能力比革蘭氏陽性菌更有效",
+          "小腸中的Paneth細胞能夠分泌抗菌蛋白酶"
+        ],
+        answer: 2,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 7
+      },
+      {
+        text: "在小鼠T細胞依賴性的抗體產生中，下列有關細胞激素對於調控抗體類別轉換之組合，何者正確？",
+        options: [
+          "IFN-γ：抑制IgM、IgG1、IgE產生，促進IgG3及IgG2a產生",
+          "IL-21：抑制IgG3、IgG1、IgA產生，促進IgM產生",
+          "IL-4：抑制IgM、IgG3、IgG1、IgE產生",
+          "TGF-β：抑制IgG3、IgG2b、IgA產生"
+        ],
+        answer: 0,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 8
+      },
+      {
+        text: "活化的B細胞、樹突細胞和巨噬細胞，主要皆具有下列那個分子標誌？",
+        options: [
+          "CD2",
+          "CD16b",
+          "CD36",
+          "CD80"
+        ],
+        answer: 3,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 9
+      },
+      {
+        text: "下列何者是早期胸腺細胞（early thymocytes）最重要的生長與分化因子？",
+        options: [
+          "Interleukin-4（IL-4）",
+          "Interleukin-7（IL-7）",
+          "Interleukin-10（IL-10）",
+          "Interleukin-12（IL-12）"
+        ],
+        answer: 1,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 10
+      },
+      {
+        text: "下列有關NKT細胞的敘述，何者錯誤？",
+        options: [
+          "NKT細胞具有T細胞受體（TCR），其中有些可以表現CD4分子",
+          "其細胞受體主要識別蛋白質胜肽",
+          "其細胞受體也可以辨識CD1呈獻的特定脂質和醣脂質",
+          "與人類哮喘（asthma）可能有關"
+        ],
+        answer: 1,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 11
+      },
+      {
+        text: "下列有關體外淋巴球的增生試驗，何者錯誤？",
+        options: [
+          "使用51Cr標定細胞",
+          "使用PHA刺激T細胞",
+          "使用ConA刺激T細胞",
+          "一般需要培養3～6天左右"
+        ],
+        answer: 0,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 12
+      },
+      {
+        text: "下列何種方法不適合偵測細胞凋亡？",
+        options: [
+          "TUNEL assay",
+          "PI-Annexin V staining",
+          "Caspase assay",
+          "3H-thymidine incorporation"
+        ],
+        answer: 3,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 13
+      },
+      {
+        text: "下列何種方法無法測定抗原與抗體之間的作用？",
+        options: [
+          "免疫擴散法（immunodiffusion）",
+          "免疫螢光分析法（immunofluorescence）",
+          "混合淋巴球測試（mixed lymphocyte reaction）",
+          "紅血球凝集法（hemagglutination）"
+        ],
+        answer: 2,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 14
+      },
+      {
+        text: "下列有關螢光免疫法和化學冷光免疫法的敘述，何者錯誤？",
+        options: [
+          "螢光及化學冷光皆需酵素參與",
+          "螢光免疫法需利用外源光能量激發",
+          "化學冷光免疫法利用化學反應發光",
+          "兩者皆可用光度計測量"
+        ],
+        answer: 0,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 15
+      },
+      {
+        text: "下列何種補體路徑可在不需要抗體的協助即可殺死血吸蟲的幼蟲？",
+        options: [
+          "古典路徑（classical pathway）",
+          "替代路徑（alternative pathway）",
+          "外源凝集素路徑（lectin pathway）",
+          "內在路徑（intrinsic pathway）"
+        ],
+        answer: 1,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 16
+      },
+      {
+        text: "下列有關巨細胞病毒（cytomegalovirus, CMV）的敘述，何者錯誤？",
+        options: [
+          "類單核白血球增多症（mononucleosis-like syndrome）的患者其CD8 T細胞數量會有上升的現象",
+          "在CMV感染的細胞中，早期立即性抗原（immediate-early antigen）約在感染1小時內出現",
+          "在患者血清中，CMV專一性IgM含量升高可代表復發及近期感染",
+          "CMV可透過胎盤造成胎兒先天性感染，目前仍無疫苗可預防"
+        ],
+        answer: 2,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 17
+      },
+      {
+        text: "下列那些病毒蛋白是屬於HIV-2？①p24 ②p26 ③gp34 ④gp41 ⑤gp120 ⑥gp140",
+        options: [
+          "①④⑤",
+          "②④⑤",
+          "①③⑥",
+          "②③⑥"
+        ],
+        answer: 3,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 18
+      },
+      {
+        text: "下列何者不適用於實驗室診斷S. pyogenes感染？",
+        options: [
+          "咽喉或鼻腔檢體的培養",
+          "Febrile agglutinins",
+          "Anti-streptolysin O（ASO）",
+          "Anti-DNase B"
+        ],
+        answer: 1,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 19
+      },
+      {
+        text: "下列何種細胞可製造IL-4，IL-5，IL-9和IL-13等細胞激素，幫助對抗寄生蟲的感染？",
+        options: [
+          "Nature killer cells（NK cells）",
+          "Innate lymphoid cells 1（ILC1）",
+          "Innate lymphoid cells 2（ILC2）",
+          "Innate lymphoid cells 3（ILC3）"
+        ],
+        answer: 2,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 20
+      },
+      {
+        text: "下列有關農夫肺（farmer's lung）的敘述，何者錯誤？",
+        options: [
+          "屬於第三型過敏反應",
+          "吸入性抗原誘發宿主產生IgA抗體",
+          "免疫複合物在肺泡壁中形成",
+          "重複暴露在乾草灰塵或黴菌孢子"
+        ],
+        answer: 1,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 21
+      },
+      {
+        text: "Rh陰性血型母親懷有Rh陽性血型的胎兒時，可造成新生兒溶血性疾病，是因為母體內有對抗Rh抗原的何種抗體可以造成胎兒紅血球溶血？",
+        options: [
+          "IgG",
+          "IgA",
+          "IgD",
+          "IgE"
+        ],
+        answer: 0,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 22
+      },
+      {
+        text: "重症肌無力（myasthenia gravis）是屬於下列那一型過敏反應？",
+        options: [
+          "第一型",
+          "第二型",
+          "第三型",
+          "第四型"
+        ],
+        answer: 1,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 23
+      },
+      {
+        text: "下列何種疾病和髓鞘鹼性蛋白抗體（myelin basic protein antibody）最相關？",
+        options: [
+          "重症肌無力（myasthenia gravis, MG）",
+          "多發性硬化症（multiple sclerosis, MS）",
+          "全身性硬化症（systemic sclerosis, SS）",
+          "多發性骨髓瘤（multiple myeloma, MM）"
+        ],
+        answer: 1,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 24
+      },
+      {
+        text: "下列有關抗磷脂抗體（anti-phospholipid antibody）的敘述，何者錯誤？",
+        options: [
+          "會造成VDRL偽陰性",
+          "會造成APTT延長",
+          "和血小板減少相關",
+          "和習慣性流產相關"
+        ],
+        answer: 0,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 25
+      },
+      {
+        text: "下列有關全身性紅斑狼瘡（systemic lupus erythematosus, SLE）的敘述，何者錯誤？",
+        options: [
+          "SLE是一個屬於自體免疫發炎的疾病",
+          "多發性關節炎（polyarthritis）是臨床最常見的症狀",
+          "懷孕的狼瘡病人出現anti-Ro（SS-A）時，其新生兒可能會罹患心臟疾病",
+          "SLE病人血中有anti-ribosomal P存在時，則出現雷諾現象（Raynaud phenomenon）之比例會增加"
+        ],
+        answer: 3,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 26
+      },
+      {
+        text: "紅斑性狼瘡病人體內的那種免疫球蛋白最常見非特異性增加？①IgG ②IgM ③IgA ④IgD ⑤IgE",
+        options: [
+          "①②",
+          "②③",
+          "③④",
+          "④⑤"
+        ],
+        answer: 0,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 27
+      },
+      {
+        text: "下列何者為第一型糖尿病的動物模式？",
+        options: [
+          "NOD（nonobese diabetic）",
+          "NZB（New Zealand black）",
+          "（NZB × NZW）F1",
+          "AA（autoimmune arthritis）"
+        ],
+        answer: 0,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 28
+      },
+      {
+        text: "下列何種檢測能取代rheumatoid factor test（RF test）？",
+        options: [
+          "抗環瓜氨酸抗體（anti-cyclic citrullinated peptide, anti-CCP）",
+          "紅血球沉降速率（erythrocyte sedimentation rate, ESR）",
+          "C反應蛋白（C-reactive protein, CRP）",
+          "人類白血球組織抗原分型（HLA typing）"
+        ],
+        answer: 0,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 29
+      },
+      {
+        text: "下列有關免疫豁免區（immune privileged site）的敘述，何者正確？",
+        options: [
+          "包含心、肝、脾、肺、腎",
+          "能產生抗發炎細胞激素IL-2",
+          "因為誘發Th17細胞，而生成免疫耐受區",
+          "植入此區的移植物，不易產生免疫反應"
+        ],
+        answer: 3,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 30
+      },
+      {
+        text: "下列何者是移植物抗宿主反應（graft-versus-host disease）造成移植排斥的主因？",
+        options: [
+          "抗組織相容抗體（anti-MHC antibody）預先存在受贈者體內",
+          "抗組織相容抗體預先存在捐贈者體內",
+          "預先存在於移植物的免疫細胞排斥受贈者的組織",
+          "受贈者的T細胞引起延遲性過敏"
+        ],
+        answer: 2,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 31
+      },
+      {
+        text: "在懷孕母親體內的胎兒其HLA haplotype與母親不同，此時母體與胎兒的關係最相似於何種移植狀態？",
+        options: [
+          "Autograft",
+          "Xenograft",
+          "Isograft",
+          "Allograft"
+        ],
+        answer: 3,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 32
+      },
+      {
+        text: "下列何種免疫抑制劑是直接影響核苷酸的合成導致T細胞無法增生？",
+        options: [
+          "Azathioprine",
+          "FK506",
+          "Cyclosporin A",
+          "Rapamycin"
+        ],
+        answer: 0,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 33
+      },
+      {
+        text: "下列有關CAR-T（chimeric antigen receptors-T）細胞的敘述何者錯誤？",
+        options: [
+          "具有辨識腫瘤抗原的抗體與T細胞受體之融合蛋白",
+          "CAR-T細胞活化可不需抗原呈獻細胞參與",
+          "該技術已有FDA核准上市",
+          "CAR-T治療不會引起發炎反應"
+        ],
+        answer: 3,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 34
+      },
+      {
+        text: "若單株抗體由來自小鼠的變異區（variable region）和人類的恆定區（constant region）組成，稱為下列何者？",
+        options: [
+          "Mouse antibody",
+          "Chimeric antibody",
+          "Humanized antibody",
+          "Human antibody"
+        ],
+        answer: 1,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 35
+      },
+      {
+        text: "下列何者並非腫瘤逃脫免疫攻擊的機制？",
+        options: [
+          "腫瘤細胞分泌TGF-β誘發調節型T細胞",
+          "腫瘤細胞降低其MHC class I分子的表現量",
+          "腫瘤細胞降低其CD80的表現量",
+          "腫瘤細胞降低其PD-L1的表現量"
+        ],
+        answer: 3,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 36
+      },
+      {
+        text: "下列何種公費疫苗剛出生就要接種？",
+        options: [
+          "B型肝炎",
+          "MMR",
+          "流感疫苗",
+          "白喉百日咳破傷風"
+        ],
+        answer: 0,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 37
+      },
+      {
+        text: "下列何種疫苗非不活化（inactivated）疫苗？",
+        options: [
+          "霍亂疫苗",
+          "鼠疫疫苗",
+          "小兒痲痺沙克疫苗",
+          "德國麻疹疫苗"
+        ],
+        answer: 3,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 38
+      },
+      {
+        text: "下列何種細胞激素組合，因為其heterodimer結構皆具有p40單體，因此其部分的生物功能相似？",
+        options: [
+          "IL-12／IFN-γ",
+          "IL-12／IL-17",
+          "IL-17／IL-23",
+          "IL-12／IL-23"
+        ],
+        answer: 3,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 39
+      },
+      {
+        text: "下列何種檢測方法最適合用來評估可產生IFN-γ的CD8 T細胞比例？",
+        options: [
+          "Enzyme-linked immunosorbent assay（ELISA）",
+          "Western blot",
+          "Real-time polymerase chain reaction",
+          "Flow cytometry"
+        ],
+        answer: 3,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 40
+      },
+      {
+        text: "有關使用西方墨點法（Western blot, WB）測病毒抗體的敘述，下列何者錯誤？",
+        options: [
+          "HTLV的確認試驗",
+          "抗原可以來自病毒或合成蛋白",
+          "可同時偵測單一病毒多個蛋白質的抗體反應",
+          "HSV-1/2主要用UL42、UL29、UL5、UL52等蛋白當WB抗原"
+        ],
+        answer: 3,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 41
+      },
+      {
+        text: "以抗病毒藥物治療時，下列何者最不易自感染者身上完全清除？",
+        options: [
+          "新冠病毒之負向RNA",
+          "C型肝炎病毒之正向RNA",
+          "猴痘病毒之DNA",
+          "B型肝炎病毒之cccDNA"
+        ],
+        answer: 3,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 42
+      },
+      {
+        text: "目前臨床使用的疫苗中，何種不是活性減毒疫苗？",
+        options: [
+          "B型肝炎疫苗",
+          "水痘疫苗",
+          "登革熱疫苗",
+          "德國麻疹疫苗"
+        ],
+        answer: 0,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 43
+      },
+      {
+        text: "有關即時聚合酶鏈鎖反應（real-time PCR）的敘述，下列何者最適當？",
+        options: [
+          "SYBR green系統原理是利用引子對（primer sets）結合病毒自身的單股與雙股基因",
+          "當Tm值越高代表病毒濃度越低",
+          "PCR跑35 cycles時產物放大2×35倍",
+          "TaqMan系統中的DNA polymerase具有exonuclease活性"
+        ],
+        answer: 3,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 44
+      },
+      {
+        text: "以溶斑試驗（plaque assay）定量臨床病毒株，接種量為0.2 mL/well，每個病毒稀釋倍數重複3次試驗。在1：10⁴稀釋倍數觀察到的溶斑數目分別為20、25、27。該病毒的原始效價每mL可能有多少pfu？",
+        options: [
+          "1.2×10⁶",
+          "1.2×10⁵",
+          "1.5×10⁵",
+          "1.5×10⁶"
+        ],
+        answer: 0,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 45
+      },
+      {
+        text: "有關血球凝集抑制試驗（hemagglutination inhibition, HI）的敘述，下列何者最不適當？",
+        options: [
+          "可用以評估施打流感疫苗後的抗體反應",
+          "可應用於鑑定病毒的血清型（serotype）或亞型（subtype）",
+          "當檢測為HI＞40即代表陰性結果",
+          "流感病毒感染恢復期患者的血清呈陽性反應"
+        ],
+        answer: 2,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 46
+      },
+      {
+        text: "有關HIV抗體／抗原快速診斷的敘述，下列何者最適當？",
+        options: [
+          "相較於HIV抗體快速診斷，可縮短檢測空窗期",
+          "如為陽性結果，須在24小時內徑直通報衛生福利部疾病管制署",
+          "一般以HIV的gp120抗原及抗體作為快速診斷試劑之標的",
+          "對於急性高風險暴露族群應以此檢測取代核酸篩檢"
+        ],
+        answer: 0,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 47
+      },
+      {
+        text: "有關病毒性肝炎之臨床症狀，下列何者最適當？",
+        options: [
+          "A型肝炎病毒感染之病程較B型肝炎病毒長",
+          "A型肝炎病毒之急性感染，兒童較成人症狀嚴重",
+          "C型肝炎病毒感染較A型肝炎病毒感染容易變成慢性感染",
+          "D型肝炎病毒感染與造成嚴重猛爆性肝炎症狀無關"
+        ],
+        answer: 2,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 48
+      },
+      {
+        text: "有關病毒培養的敘述，下列何者正確？",
+        options: [
+          "同時培養兩種不同的細胞於一個培養皿內，可擴大培養病毒種類的範圍",
+          "培養代數愈高的細胞株較容易分離培養出病毒",
+          "以同一種病毒感染不同細胞時，出現細胞病變（cytopathic effect）的時間大致相同",
+          "可用一種細胞株培養出所有臨床常見的病毒"
+        ],
+        answer: 0,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 49
+      },
+      {
+        text: "有關流感病毒抗原快篩試劑的敘述，下列何者錯誤？",
+        options: [
+          "利用免疫層析（immunochromatography）的原理",
+          "試驗中常利用膠體金（colloid gold）呈色",
+          "靈敏度通常超過90％",
+          "通常僅能區分A型及B型，無法區分亞型（subtype）"
+        ],
+        answer: 2,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 50
+      },
+      {
+        text: "HEp-2細胞接種臨床呼吸道檢體產生的細胞病變，何者最可能是造成這個細胞病變的病毒？（圖示：細胞融合形成多核巨細胞）",
+        options: [
+          "腸病毒",
+          "腺病毒",
+          "單純疱疹病毒",
+          "呼吸道融合病毒"
+        ],
+        answer: 3,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 51
+      },
+      {
+        text: "有關數位聚合酶鏈反應（digital PCR）的核酸定量，下列何者正確？",
+        options: [
+          "比較標準曲線以定量病毒核酸",
+          "比較電泳上DNA片段強度以定量病毒核酸",
+          "根據卜瓦松分布（Poisson distributions）以定量病毒核酸",
+          "通常定量病毒的準確度低於即時聚合酶鏈反應（real-time PCR）"
+        ],
+        answer: 2,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 52
+      },
+      {
+        text: "有關C型肝炎病毒之敘述，下列何者錯誤？",
+        options: [
+          "是黃病毒科的一員，病毒基因體為正向單股RNA",
+          "慢性感染可能會導致肝癌的產生",
+          "Direct acting antivirals（DAAs）可治癒大於90％的感染者",
+          "DAAs的標的包括NS3/4A polymerase及NS5B protease"
+        ],
+        answer: 3,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 53
+      },
+      {
+        text: "有關SARS-CoV-2臨床檢驗之敘述，下列何者最適當？",
+        options: [
+          "病毒抗體快篩是最佳確診方法",
+          "病毒只會出現在下呼吸道檢體",
+          "臨床上不會與其他呼吸道病毒共同感染",
+          "可針對具臨床症狀或有流行病學危險因子者進行real-time RT-PCR篩檢"
+        ],
+        answer: 3,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 54
+      },
+      {
+        text: "有關人類第一型疱疹病毒（herpes simplex virus type 1）顆粒的成分或分子，下列何者不是由病毒基因所製備？",
+        options: [
+          "蛋白外衣（capsid）",
+          "外套膜脂質（envelope lipid）",
+          "外套膜醣蛋白（envelope glycoprotein）",
+          "DNA聚合酶（polymerase）"
+        ],
+        answer: 1,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 55
+      },
+      {
+        text: "有關漢他病毒（hantavirus）特性之敘述，下列何者錯誤？",
+        options: [
+          "人類是主要的宿主和傳染媒介",
+          "是人畜共患之疾病",
+          "感染後之主要症狀為突然發燒、肺水腫、呼吸窘迫和低血壓",
+          "容易從囓齒動物糞便經由空氣傳播"
+        ],
+        answer: 0,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 56
+      },
+      {
+        text: "下列那種疾病不是由prion所引起？",
+        options: [
+          "Creutzfeldt-Jakob disease（CJD）",
+          "Gerstmann-Sträussler-Scheinker（GSS）syndrome",
+          "bovine spongiform encephalopathy（mad cow disease）",
+          "erythema infectiosum（fifth disease）"
+        ],
+        answer: 3,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 57
+      },
+      {
+        text: "下列何種病毒感染後多潛伏在腎臟？",
+        options: [
+          "BK病毒（BK virus）",
+          "EB病毒（Epstein-Barr virus）",
+          "單純疱疹病毒第二型（herpes simplex virus type 2）",
+          "疱疹病毒第六型（herpesvirus 6）"
+        ],
+        answer: 0,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 58
+      },
+      {
+        text: "有關痘病毒（poxvirus）的敘述，下列何者最不適當？",
+        options: [
+          "variola virus是smallpox的致病原",
+          "病毒顆粒呈20面體",
+          "可在雞胚胎蛋複製",
+          "痘苗病毒（vaccinia virus）可用來做為疫苗以防治天花"
+        ],
+        answer: 1,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 59
+      },
+      {
+        text: "下列何種病毒感染後最有可能從尿液檢出病毒？",
+        options: [
+          "adenovirus",
+          "rotavirus",
+          "varicella-zoster virus",
+          "influenza virus"
+        ],
+        answer: 0,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 60
+      },
+      {
+        text: "下列何種病毒感染是造成嬰幼兒玫瑰疹（roseola）的最常見原因？",
+        options: [
+          "human herpesvirus 6",
+          "human herpesvirus 5",
+          "human herpesvirus 3",
+          "human herpesvirus 8"
+        ],
+        answer: 0,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 61
+      },
+      {
+        text: "有關BK及JC病毒之臨床檢測及對於免疫力正常者致病相關性的敘述，下列何者正確？",
+        options: [
+          "以分離病毒為最佳檢測方法／二者致病性皆不高",
+          "以PCR為最佳檢測方法／二者致病性皆不高",
+          "以分離病毒為最佳檢測方法／二者致病性皆強",
+          "以PCR為最佳檢測方法／二者致病性皆強"
+        ],
+        answer: 1,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 62
+      },
+      {
+        text: "有關人類乳突病毒（HPV）的檢驗，下列敘述何者正確？",
+        options: [
+          "p16INK4a可作為precancer的biomarker",
+          "臨床上主要使用血清學方法來進行檢測分型",
+          "95％的女性在感染後均能檢測出病毒DNA及特異性抗體反應",
+          "Hybrid Capture Ⅱ主要用DNA探針來偵測HPV的存在"
+        ],
+        answer: 0,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 63
+      },
+      {
+        text: "有關human herpesvirus 8（HHV-8）的敘述，下列何者錯誤？",
+        options: [
+          "可經由性行為傳染",
+          "最初在AIDS病患的Kaposi sarcoma組織中以分子核酸方法鑑定出來",
+          "與HHV-6同屬於betaherpesvirus",
+          "可感染淋巴球"
+        ],
+        answer: 2,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 64
+      },
+      {
+        text: "有關varicella-zoster virus（VZV）的敘述，下列何者錯誤？",
+        options: [
+          "主要為飛沫傳染",
+          "造成全身性感染",
+          "主要潛伏於B細胞中",
+          "治療藥物包括acyclovir及famciclovir"
+        ],
+        answer: 2,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 65
+      },
+      {
+        text: "B型肝炎病毒血清診斷的結果為：HBsAg陰性、anti-HBs陽性、anti-HBc陰性，此受檢者最有可能是下列何種狀況？",
+        options: [
+          "B型肝炎病毒帶原者",
+          "過去感染B型肝炎病毒並產生免疫力",
+          "過去感染B型肝炎病毒並曾施打過B型肝炎病毒疫苗",
+          "從未感染B型肝炎病毒但曾施打過B型肝炎病毒疫苗"
+        ],
+        answer: 3,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 66
+      },
+      {
+        text: "造成發熱伴血小板減少綜合症（SFTS）的致病原屬於Bunyaviridae的SFTSV。有關SFTSV的敘述，下列何者錯誤？",
+        options: [
+          "在山區活動時應注意預防各種蚊蟲叮咬，可有效預防被SFTSV傳染",
+          "SFTSV病毒為有外套膜，內含三段負向單股RNA之病毒顆粒",
+          "SFTSV病毒每段基因只編碼一個病毒蛋白",
+          "感染SFTSV也可能出現肝指數上升及器官衰竭等症狀"
+        ],
+        answer: 2,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 67
+      },
+      {
+        text: "有關hepatitis D virus之生活史，下列敘述何者正確？",
+        options: [
+          "只產生S-HDAg及L-HDAg兩個抗原",
+          "病毒基因體為線型單股RNA（linear ssRNA）",
+          "利用hepatitis B virus（HBV）所帶之polymerase進行複製",
+          "帶有anti-HBs Ab的健康人仍可能被HDV感染"
+        ],
+        answer: 0,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 68
+      },
+      {
+        text: "有關正黏液病毒科（Orthomyxoviridae）的敘述，下列何者正確？",
+        options: [
+          "基因組皆為八條負向單股RNA",
+          "麻疹病毒（measles virus）屬於此病毒科",
+          "成熟病毒顆粒不具有脂質外套膜（envelope）",
+          "電子顯微鏡下的病毒形態可能為球狀（spherical）或絲狀（filamentous）"
+        ],
+        answer: 3,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 69
+      },
+      {
+        text: "有關鼻病毒的敘述，下列何者錯誤？",
+        options: [
+          "無套膜，正向RNA病毒",
+          "大部分使用ICAM-1進入細胞",
+          "rhinovirus A不易以細胞培養分離",
+          "適合在33℃生長"
+        ],
+        answer: 2,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 70
+      },
+      {
+        text: "有關流感病毒檢測的敘述，下列何者最不適當？",
+        options: [
+          "常以血液檢體進行抗藥性檢測",
+          "可利用MDCK細胞進行病毒培養",
+          "臨床上可以抗原快篩作為初步篩檢",
+          "可以RT-PCR進行亞型檢測"
+        ],
+        answer: 0,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 71
+      },
+      {
+        text: "下列何種RNA病毒，其基因體長度最長？",
+        options: [
+          "herpes simplex virus",
+          "coronavirus",
+          "dengue virus",
+          "norovirus"
+        ],
+        answer: 1,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 72
+      },
+      {
+        text: "有關麻疹病毒（measles virus）之敘述，下列何者錯誤？",
+        options: [
+          "屬於副黏液病毒科（Paramyxoviridae）中的一員",
+          "只有一種血清型",
+          "只會感染人類",
+          "有次單位疫苗可用於預防"
+        ],
+        answer: 3,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 73
+      },
+      {
+        text: "有關伊波拉病毒之實驗室診斷和治療，下列敘述何者正確？",
+        options: [
+          "病毒分離需要在BSL3實驗室進行",
+          "自然宿主為高等靈長類動物",
+          "主要是以蚊蟲叮咬傳播",
+          "造成的出血熱，目前以支持性療法為主"
+        ],
+        answer: 3,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 74
+      },
+      {
+        text: "下列何種病毒的傳染媒介與其它選項不同？",
+        options: [
+          "登革病毒（dengue virus）",
+          "漢他病毒（hantavirus）",
+          "日本腦炎病毒（Japanese encephalitis virus）",
+          "黃熱病毒（yellow fever virus）"
+        ],
+        answer: 1,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 75
+      },
+      {
+        text: "有關呼吸道融合病毒（RSV）的敘述，下列何者錯誤？",
+        options: [
+          "屬於Pneumoviridae",
+          "只感染人類",
+          "通常不會造成長時間的viremia",
+          "自然感染後可終身免疫"
+        ],
+        answer: 3,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 76
+      },
+      {
+        text: "有關第一型人類免疫缺乏病毒（HIV-1）的敘述，下列何者錯誤？",
+        options: [
+          "病毒蛋白酶可以將病毒套膜蛋白（Env）切割成gp41與gp120",
+          "主要受體為宿主細胞上的CD4分子",
+          "non-nucleoside reverse transcriptase inhibitors（nNRTI）對於HIV-2的治療效果差",
+          "病毒Gag-Pol與Gag蛋白產物的切割，由病毒蛋白酶負責"
+        ],
+        answer: 0,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 77
+      },
+      {
+        text: "有關亨德拉病毒（Hendra virus）的敘述，下列何者最不適當？",
+        options: [
+          "基因組為負向單股RNA",
+          "可感染人和馬",
+          "症狀輕微，不會造成死亡",
+          "可在感染初期的人類鼻咽分泌物測到病毒"
+        ],
+        answer: 2,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 78
+      },
+      {
+        text: "下列那個病毒為黃病毒屬，且在其傳播週期（transmission cycle）中，除節肢動物宿主外，人類是最主要的放大宿主（amplifying host）？",
+        options: [
+          "Chikungunya virus",
+          "Japanese encephalitis virus",
+          "yellow fever virus",
+          "dengue virus"
+        ],
+        answer: 3,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 79
+      },
+      {
+        text: "關於狂犬病毒（rabies virus）之敘述，下列何者錯誤？",
+        options: [
+          "屬於桿狀病毒科（Rhabdoviridae）",
+          "基因體為正向單股RNA",
+          "病毒會感染中樞神經系統",
+          "目前用於人類的疫苗為去活化病毒疫苗"
+        ],
+        answer: 1,
+        explanation: "",
+        exam: "第一次", year: 114, exam: "第一次", serial: 80
+      }
+    ]
+  }
+
+}; // end QUESTION_BANK
+
+
+// ════════════════════════════════════════
+//  工具函式：Fisher-Yates Shuffle
+// ════════════════════════════════════════
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// ════════════════════════════════════════
+//  從各科隨機抽題，組合成本次測驗題目
+// ════════════════════════════════════════
+function buildSession() {
+  const session = [];
+  for (const [subjectName, subjectData] of Object.entries(QUESTION_BANK)) {
+    // 將題目加上科目資訊
+    const tagged = subjectData.questions.map(q => ({
+      ...q,
+      subject: subjectName,
+      subjectIcon: subjectData.icon
+    }));
+    // Shuffle 後取前 DRAW_PER_SUBJECT 題（不足則全取）
+    const picked = shuffle(tagged).slice(0, DRAW_PER_SUBJECT);
+    session.push(...picked);
+  }
+  // 最後再整體 shuffle，讓六科題目交錯出現
+  return shuffle(session);
+}
+
+// ════════════════════════════════════════
+//  State
+// ════════════════════════════════════════
+let QUESTIONS   = [];
+let current     = 0;
+let userAnswers = [];
+
+// ════════════════════════════════════════
+//  Init — 每次呼叫都重新抽題
+// ════════════════════════════════════════
+function init() {
+  QUESTIONS   = buildSession();
+  userAnswers = new Array(QUESTIONS.length).fill(null);
+  current     = 0;
+
+  document.getElementById('hdr-total').textContent = QUESTIONS.length;
+  document.getElementById('q-total').textContent   = QUESTIONS.length;
+  buildDots();
+  renderQuestion(0);
+}
+
+function buildDots() {
+  const nav = document.getElementById('dots-nav');
+  nav.innerHTML = '';
+  QUESTIONS.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'dot';
+    d.title = `第 ${i+1} 題`;
+    d.onclick = () => goTo(i);
+    nav.appendChild(d);
+  });
+  refreshDots();
+}
+
+function refreshDots() {
+  const dots = document.querySelectorAll('.dot');
+  dots.forEach((d, i) => {
+    d.className = 'dot';
+    if (i === current) d.classList.add('current');
+    else if (userAnswers[i] !== null) {
+      d.classList.add(
+        userAnswers[i] === QUESTIONS[i].answer ? 'answered-correct' : 'answered-wrong'
+      );
+    }
+  });
+}
+
+// ════════════════════════════════════════
+//  Render
+// ════════════════════════════════════════
+function renderQuestion(idx) {
+  current = idx;
+  const q = QUESTIONS[idx];
+  const answered = userAnswers[idx] !== null;
+  const LABELS = ['A', 'B', 'C', 'D', 'E', 'F'];
+
+  document.getElementById('hdr-current').textContent = idx + 1;
+  document.getElementById('q-num').textContent        = idx + 1;
+
+  const badge = document.getElementById('subject-badge');
+  badge.textContent = `${q.subjectIcon} ${q.subject}`;
+
+  // 年度 / 題號標籤
+  const yearEl = document.getElementById('q-year');
+  if (q.year && q.year > 0) {
+    yearEl.textContent = `民國 ${q.year} 年  第 ${q.serial} 題`;
+    yearEl.style.display = '';
+  } else {
+    yearEl.style.display = 'none';
+  }
+
+  document.getElementById('q-text').textContent = q.text;
+
+  const optDiv = document.getElementById('options');
+  optDiv.innerHTML = '';
+  q.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn';
+    btn.innerHTML = `<span class="option-label">${LABELS[i]}</span><span class="option-text">${opt}</span>`;
+
+    if (answered) {
+      btn.disabled = true;
+      const sel = userAnswers[idx];
+      if (i === q.answer) btn.classList.add('highlight-correct');
+      else if (i === sel) btn.classList.add('wrong');
+      else btn.classList.add('dimmed');
+    } else {
+      btn.onclick = () => selectAnswer(i);
+    }
+    optDiv.appendChild(btn);
+  });
+
+  const fb     = document.getElementById('feedback');
+  const fbHead = document.getElementById('feedback-header');
+  const fbBody = document.getElementById('feedback-body');
+
+  if (answered) {
+    const isCorrect = userAnswers[idx] === q.answer;
+    fb.className = `feedback visible ${isCorrect ? 'correct-fb' : 'wrong-fb'}`;
+    fbHead.innerHTML = isCorrect
+      ? '✅ 答對了！'
+      : `❌ 答錯了！正確答案是 ${LABELS[q.answer]}`;
+    fbBody.innerHTML = `<strong>解析：</strong><br>${q.explanation}`;
+  } else {
+    fb.className = 'feedback';
+  }
+
+  document.getElementById('btn-prev').disabled = (idx === 0);
+  const isLast = idx === QUESTIONS.length - 1;
+  document.getElementById('btn-next').textContent = isLast ? '查看結果 →' : '下一題 →';
+
+  const answered_count = userAnswers.filter(a => a !== null).length;
+  document.getElementById('progress-bar').style.width =
+    (answered_count / QUESTIONS.length * 100) + '%';
+
+  let correct = 0, wrong = 0;
+  userAnswers.forEach((a, i) => {
+    if (a === null) return;
+    if (a === QUESTIONS[i].answer) correct++; else wrong++;
+  });
+  document.getElementById('hdr-correct').textContent = correct;
+  document.getElementById('hdr-wrong').textContent   = wrong;
+
+  refreshDots();
+  document.getElementById('question-card').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// ════════════════════════════════════════
+//  Answer
+// ════════════════════════════════════════
+function selectAnswer(optIdx) {
+  if (userAnswers[current] !== null) return;
+  userAnswers[current] = optIdx;
+  renderQuestion(current);
+}
+
+// ════════════════════════════════════════
+//  Navigation
+// ════════════════════════════════════════
+function navigate(dir) {
+  const next = current + dir;
+  if (next < 0) return;
+  if (next >= QUESTIONS.length) { showResult(); return; }
+  renderQuestion(next);
+}
+
+function goTo(idx) {
+  document.getElementById('quiz-section').style.display = '';
+  document.getElementById('result-card').classList.remove('visible');
+  renderQuestion(idx);
+}
+
+// ════════════════════════════════════════
+//  Result
+// ════════════════════════════════════════
+function showResult() {
+  let correct = 0, wrong = 0, skip = 0;
+  userAnswers.forEach((a, i) => {
+    if (a === null) skip++;
+    else if (a === QUESTIONS[i].answer) correct++;
+    else wrong++;
+  });
+  const pct = Math.round(correct / QUESTIONS.length * 100);
+
+  document.getElementById('result-score').textContent = pct + '%';
+  document.getElementById('res-correct').textContent  = correct;
+  document.getElementById('res-wrong').textContent    = wrong;
+  document.getElementById('res-skip').textContent     = skip;
+
+  // 各科成績細項
+  const subjectStats = {};
+  QUESTIONS.forEach((q, i) => {
+    if (!subjectStats[q.subject]) subjectStats[q.subject] = { icon: q.subjectIcon, correct: 0, total: 0 };
+    subjectStats[q.subject].total++;
+    if (userAnswers[i] === q.answer) subjectStats[q.subject].correct++;
+  });
+
+  const breakdownEl = document.getElementById('result-subject-breakdown');
+  breakdownEl.innerHTML = Object.entries(subjectStats).map(([name, s]) => {
+    const pct = Math.round(s.correct / s.total * 100);
+    const color = pct >= 60 ? 'var(--correct)' : pct >= 40 ? 'var(--gold)' : 'var(--wrong)';
+    return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+      <span style="width:24px;text-align:center">${s.icon}</span>
+      <span style="flex:1;font-size:0.82rem;color:var(--text-dim)">${name}</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:0.82rem;color:${color};min-width:60px;text-align:right">${s.correct}/${s.total}　${pct}%</span>
+    </div>`;
+  }).join('');
+
+  document.getElementById('quiz-section').style.display = 'none';
+  document.getElementById('result-card').classList.add('visible');
+  document.getElementById('progress-bar').style.width = '100%';
+}
+
+function restartQuiz() {
+  document.getElementById('quiz-section').style.display = '';
+  document.getElementById('result-card').classList.remove('visible');
+  init(); // 重新抽題（每次順序不同）
+}
+
+// ════════════════════════════════════════
+//  Start
+// ════════════════════════════════════════
+init();
+</script>
+</body>
+</html>
