@@ -160,6 +160,17 @@
     <div style="margin-top:1rem; display:flex; gap:0.8rem; flex-wrap:wrap;">
       <button class="btn btn-primary" id="btn-parse" onclick="startParse()" disabled>🚀 開始解析</button>
       <button class="btn btn-ghost" onclick="resetAll()">↺ 重置</button>
+      <button class="btn btn-ghost" id="btn-debug" onclick="showRaw()" disabled style="font-size:0.78rem">🔍 顯示原始文字</button>
+    </div>
+    <!-- Raw text modal -->
+    <div id="raw-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:999;padding:2rem;overflow:auto;">
+      <div style="max-width:800px;margin:0 auto;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.5rem;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+          <span style="font-weight:600">原始擷取文字（前 3000 字元）</span>
+          <button onclick="document.getElementById('raw-modal').style.display='none'" style="background:none;border:none;color:var(--text-muted);font-size:1.2rem;cursor:pointer">✕</button>
+        </div>
+        <pre id="raw-text" style="font-family:monospace;font-size:0.76rem;color:var(--text-dim);white-space:pre-wrap;word-break:break-all;background:#0a0c12;padding:1rem;border-radius:8px;max-height:60vh;overflow-y:auto;"></pre>
+      </div>
     </div>
   </div>
 
@@ -254,7 +265,6 @@ async function extractText(pdf) {
   for (let p = 1; p <= pdf.numPages; p++) {
     const page = await pdf.getPage(p);
     const content = await page.getTextContent();
-    // Sort items by vertical position then horizontal
     const items = content.items.sort((a, b) => {
       const dy = Math.round(b.transform[5]) - Math.round(a.transform[5]);
       return dy !== 0 ? dy : a.transform[4] - b.transform[4];
@@ -264,46 +274,82 @@ async function extractText(pdf) {
   return text;
 }
 
+// ── Store raw text for debug ──
+let _rawQText = '';
+
+// ── Normalize full-width chars ──
+function normalizeText(text) {
+  text = text.replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0));
+  text = text.replace(/[Ａ-Ｄ]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0));
+  text = text.replace(/[．｡]/g, '.').replace(/（/g, '(').replace(/）/g, ')');
+  text = text.replace(/\r\n/g, '\n').replace(/[ \t　]+/g, ' ');
+  return text;
+}
+
 // ── Parse questions from text ──
-function parseQuestions(text) {
+// Format: question number on its own line ("1."), then question text on next line,
+// then options each on their own line ("A.", then option text on next line)
+function parseQuestions(rawText) {
   const questions = [];
-  // Normalize: remove extra spaces, fix common OCR issues
-  text = text.replace(/\r\n/g, '\n').replace(/[ \t]+/g, ' ');
+  const text = normalizeText(rawText);
+  const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
 
-  // Split on question numbers: lines starting with digit(s) + . or ．
-  // e.g. "1.", "12.", "1．"
-  const qPattern = /(?:^|\n)(\d{1,2})[\.．、](.+?)(?=\n\d{1,2}[\.．、]|\n*$)/gs;
-  let match;
+  // State machine parser
+  let state = 'seek';   // seek | question | options
+  let curQ = null;
+  let curOpt = null;
 
-  while ((match = qPattern.exec(text)) !== null) {
-    const serial = parseInt(match[1]);
-    const body = match[2].trim();
+  const isQNum  = s => /^(\d{1,2})[.．]$/.test(s.trim());
+  const isOptLetter = s => /^([A-D])[.．]$/.test(s.trim());
+  const getQNum = s => parseInt(s.match(/^(\d{1,2})/)[1]);
+  const getOpt  = s => s.match(/^([A-D])/)[1];
 
-    // Extract options A B C D
-    const optPattern = /[（(]?([A-D])[）)\.．、]\s*(.+?)(?=[（(]?[A-D][）)\.．、]|$)/gs;
-    const options = [];
-    let optMatch;
-    // Find where options start
-    const firstOpt = body.search(/[（(]?[A-D][）)\.．、]/);
-    const questionText = firstOpt > 0 ? body.slice(0, firstOpt).trim() : body.trim();
-    const optBody = firstOpt > 0 ? body.slice(firstOpt) : '';
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
 
-    let om;
-    const op2 = /[（(]?([A-D])[）)\.．、]\s*([\s\S]+?)(?=[（(]?[A-D][）)\.．、]|$)/g;
-    while ((om = op2.exec(optBody)) !== null) {
-      options.push(om[2].replace(/\s+/g, ' ').trim());
-    }
+    if (isQNum(line)) {
+      // Save previous question
+      if (curQ && curOpt) {
+        curQ.options.push(curOpt.text);
+        curOpt = null;
+      }
+      if (curQ && curQ.options.length >= 2) questions.push(curQ);
 
-    if (questionText && options.length >= 2) {
-      questions.push({
-        serial,
-        text: questionText,
-        options,
-        answer: null,
-        explanation: ""
-      });
+      curQ = { serial: getQNum(line), text: '', options: [], answer: null, explanation: "" };
+      state = 'question';
+      curOpt = null;
+
+    } else if (state === 'question' && !isOptLetter(line)) {
+      // Accumulate question text (may span multiple lines)
+      curQ.text += (curQ.text ? ' ' : '') + line;
+
+    } else if (isOptLetter(line)) {
+      // Save previous option
+      if (curOpt) curQ.options.push(curOpt.text);
+      curOpt = { letter: getOpt(line), text: '' };
+      state = 'options';
+
+    } else if (state === 'options' && curOpt) {
+      // Accumulate option text (may span multiple lines)
+      // Stop if we hit a new question number
+      if (/^\d{1,2}[.．]$/.test(line)) {
+        curQ.options.push(curOpt.text);
+        curOpt = null;
+        if (curQ.options.length >= 2) questions.push(curQ);
+        curQ = { serial: getQNum(line), text: '', options: [], answer: null, explanation: "" };
+        state = 'question';
+      } else {
+        curOpt.text += (curOpt.text ? ' ' : '') + line;
+      }
     }
   }
+
+  // Flush last question
+  if (curOpt && curQ) curQ.options.push(curOpt.text);
+  if (curQ && curQ.options.length >= 2) questions.push(curQ);
+
+  // Sort by serial number
+  questions.sort((a, b) => a.serial - b.serial);
   return questions;
 }
 
@@ -364,6 +410,8 @@ async function startParse() {
   try {
     log('📄 擷取題目 PDF 文字…', 'info');
     const qText = await extractText(pdfQ);
+    _rawQText = qText;
+    document.getElementById('btn-debug').disabled = false;
     log(`   擷取完成，共 ${qText.length} 字元`);
 
     log('📄 擷取答案卷 PDF 文字…', 'info');
@@ -461,6 +509,13 @@ function downloadJSON() {
   a.href = URL.createObjectURL(blob);
   a.download = `${subject}.json`;
   a.click();
+}
+
+// ── Show raw text for debug ──
+function showRaw() {
+  const el = document.getElementById('raw-text');
+  el.textContent = _rawQText.slice(0, 3000);
+  document.getElementById('raw-modal').style.display = 'block';
 }
 
 // ── Reset ──
