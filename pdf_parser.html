@@ -287,68 +287,44 @@ function normalizeText(text) {
 }
 
 // ── Parse questions from text ──
-// Format: question number on its own line ("1."), then question text on next line,
-// then options each on their own line ("A.", then option text on next line)
+// Format: "1." on its own line, question text on next line(s),
+// "A." on its own line, option text on next line(s), etc.
 function parseQuestions(rawText) {
-  const questions = [];
   const text = normalizeText(rawText);
   const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  const questions = [];
+  let curQ = null, curOpt = null;
 
-  // State machine parser
-  let state = 'seek';   // seek | question | options
-  let curQ = null;
-  let curOpt = null;
+  const isN = s => /^\d{1,2}\.$/.test(s);
+  const isO = s => /^[A-D]\.$/.test(s);
 
-  const isQNum  = s => /^(\d{1,2})[.．]$/.test(s.trim());
-  const isOptLetter = s => /^([A-D])[.．]$/.test(s.trim());
-  const getQNum = s => parseInt(s.match(/^(\d{1,2})/)[1]);
-  const getOpt  = s => s.match(/^([A-D])/)[1];
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-
-    if (isQNum(line)) {
-      // Save previous question
-      if (curQ && curOpt) {
-        curQ.options.push(curOpt.text);
-        curOpt = null;
-      }
+  for (const line of lines) {
+    if (isN(line)) {
+      // Save previous option and question
+      if (curOpt !== null && curQ) curQ.options.push(curOpt);
       if (curQ && curQ.options.length >= 2) questions.push(curQ);
-
-      curQ = { serial: getQNum(line), text: '', options: [], answer: null, explanation: "" };
-      state = 'question';
+      curQ = { serial: parseInt(line), text: '', options: [], answer: null, explanation: "" };
       curOpt = null;
-
-    } else if (state === 'question' && !isOptLetter(line)) {
-      // Accumulate question text (may span multiple lines)
-      curQ.text += (curQ.text ? ' ' : '') + line;
-
-    } else if (isOptLetter(line)) {
+    } else if (isO(line)) {
       // Save previous option
-      if (curOpt) curQ.options.push(curOpt.text);
-      curOpt = { letter: getOpt(line), text: '' };
-      state = 'options';
-
-    } else if (state === 'options' && curOpt) {
-      // Accumulate option text (may span multiple lines)
-      // Stop if we hit a new question number
-      if (/^\d{1,2}[.．]$/.test(line)) {
-        curQ.options.push(curOpt.text);
-        curOpt = null;
-        if (curQ.options.length >= 2) questions.push(curQ);
-        curQ = { serial: getQNum(line), text: '', options: [], answer: null, explanation: "" };
-        state = 'question';
-      } else {
-        curOpt.text += (curOpt.text ? ' ' : '') + line;
-      }
+      if (curOpt !== null && curQ) curQ.options.push(curOpt);
+      curOpt = '';
+    } else if (curOpt !== null) {
+      // Accumulate option text
+      curOpt += (curOpt ? ' ' : '') + line;
+    } else if (curQ && !curQ.text) {
+      // First line after question number = question text
+      curQ.text = line;
+    } else if (curQ) {
+      // Continuation of question text
+      curQ.text += ' ' + line;
     }
   }
 
   // Flush last question
-  if (curOpt && curQ) curQ.options.push(curOpt.text);
+  if (curOpt !== null && curQ) curQ.options.push(curOpt);
   if (curQ && curQ.options.length >= 2) questions.push(curQ);
 
-  // Sort by serial number
   questions.sort((a, b) => a.serial - b.serial);
   return questions;
 }
