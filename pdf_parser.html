@@ -286,11 +286,29 @@ function normalizeText(text) {
   return text;
 }
 
+// ── Detect PDF format ──
+function detectFormat(text) {
+  const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+  // Format A: question number alone on its own line e.g. "1."
+  const aloneNums = lines.filter(l => /^\d{1,2}\.$/.test(l)).length;
+  // Format B: inline - number embedded in text e.g. "1. 題目 A. 選項"
+  const inlineNums = (text.match(/\d{1,2}[．.][^\d]/g) || []).length;
+  return aloneNums >= 10 ? 'multiline' : 'inline';
+}
+
 // ── Parse questions from text ──
-// Format: "1." on its own line, question text on next line(s),
-// "A." on its own line, option text on next line(s), etc.
 function parseQuestions(rawText) {
   const text = normalizeText(rawText);
+  const format = detectFormat(text);
+  return format === 'multiline'
+    ? parseMultiline(text)
+    : parseInline(text);
+}
+
+// ── Format A: each element on its own line ──
+// 1.          A.
+// 題目文字    選項文字
+function parseMultiline(text) {
   const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
   const questions = [];
   let curQ = null, curOpt = null;
@@ -300,31 +318,70 @@ function parseQuestions(rawText) {
 
   for (const line of lines) {
     if (isN(line)) {
-      // Save previous option and question
       if (curOpt !== null && curQ) curQ.options.push(curOpt);
       if (curQ && curQ.options.length >= 2) questions.push(curQ);
       curQ = { serial: parseInt(line), text: '', options: [], answer: null, explanation: "" };
       curOpt = null;
     } else if (isO(line)) {
-      // Save previous option
       if (curOpt !== null && curQ) curQ.options.push(curOpt);
       curOpt = '';
     } else if (curOpt !== null) {
-      // Accumulate option text
       curOpt += (curOpt ? ' ' : '') + line;
     } else if (curQ && !curQ.text) {
-      // First line after question number = question text
       curQ.text = line;
     } else if (curQ) {
-      // Continuation of question text
       curQ.text += ' ' + line;
     }
   }
-
-  // Flush last question
   if (curOpt !== null && curQ) curQ.options.push(curOpt);
   if (curQ && curQ.options.length >= 2) questions.push(curQ);
+  questions.sort((a, b) => a.serial - b.serial);
+  return questions;
+}
 
+// ── Format B: everything on one/few lines ──
+// "1. 題目文字 A. 選項A B. 選項B C. 選項C D. 選項D 2. 題目..."
+function parseInline(rawText) {
+  const text = normalizeText(rawText);
+  const questions = [];
+
+  // Split the whole text on question boundaries: digit(s) + "." not followed by digit
+  // Use a token-based approach: find all Q and option markers with positions
+  const tokens = [];
+  const qPat = /(?<![\d])([1-9]\d?)[．.]\s+(?=[^\dA-D\s])/g;
+  const oPat = /\s([A-D])[．.]\s+/g;
+
+  let m;
+  // Find question starts
+  while ((m = qPat.exec(text)) !== null) {
+    tokens.push({ type: 'Q', n: parseInt(m[1]), pos: m.index, end: m.index + m[0].length });
+  }
+  // Find option starts
+  while ((m = oPat.exec(text)) !== null) {
+    tokens.push({ type: 'O', letter: m[1], pos: m.index, end: m.index + m[0].length });
+  }
+  tokens.sort((a, b) => a.pos - b.pos);
+
+  let curQ = null, curOpt = null, curOptStart = 0;
+
+  for (let i = 0; i < tokens.length; i++) {
+    const tok = tokens[i];
+    const nextPos = i + 1 < tokens.length ? tokens[i+1].pos : text.length;
+    const content = text.slice(tok.end, nextPos).replace(/\s+/g, ' ').trim();
+
+    if (tok.type === 'Q') {
+      // Save previous
+      if (curOpt !== null && curQ) curQ.options.push(curOpt);
+      if (curQ && curQ.options.length >= 2) questions.push(curQ);
+      curQ = { serial: tok.n, text: content, options: [], answer: null, explanation: "" };
+      curOpt = null;
+    } else if (tok.type === 'O' && curQ) {
+      if (curOpt !== null) curQ.options.push(curOpt);
+      curOpt = content;
+    }
+  }
+  if (curOpt !== null && curQ) curQ.options.push(curOpt);
+  if (curQ && curQ.options.length >= 2) questions.push(curQ);
   questions.sort((a, b) => a.serial - b.serial);
   return questions;
 }
