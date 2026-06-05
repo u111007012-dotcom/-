@@ -339,49 +339,47 @@ function parseMultiline(text) {
   return questions;
 }
 
-// ── Format B: everything on one/few lines ──
-// "1. 題目文字 A. 選項A B. 選項B C. 選項C D. 選項D 2. 題目..."
+// ── Format B: everything inline ──
+// "1. 題目 A. 選項A B. 選項B C. 選項C D. 選項D 2. 題目..."
 function parseInline(rawText) {
-  const text = normalizeText(rawText);
+  // Join all lines into one string for inline processing
+  const text = normalizeText(rawText).replace(/\n/g, ' ').replace(/\s+/g, ' ');
   const questions = [];
 
-  // Split the whole text on question boundaries: digit(s) + "." not followed by digit
-  // Use a token-based approach: find all Q and option markers with positions
-  const tokens = [];
-  const qPat = /(?<![\d])([1-9]\d?)[．.]\s+(?=[^\dA-D\s])/g;
-  const oPat = /\s([A-D])[．.]\s+/g;
-
+  // Split on question number boundaries: space + 1-2 digits + "." + space
+  // Lookahead ensures it's a question number (1-80)
+  const qBoundary = /(?<=\s|^)(\d{1,2})\. /g;
+  const qPositions = [];
   let m;
-  // Find question starts
-  while ((m = qPat.exec(text)) !== null) {
-    tokens.push({ type: 'Q', n: parseInt(m[1]), pos: m.index, end: m.index + m[0].length });
+  while ((m = qBoundary.exec(text)) !== null) {
+    const n = parseInt(m[1]);
+    if (n >= 1 && n <= 80) qPositions.push({ n, start: m.index, bodyStart: m.index + m[0].length });
   }
-  // Find option starts
-  while ((m = oPat.exec(text)) !== null) {
-    tokens.push({ type: 'O', letter: m[1], pos: m.index, end: m.index + m[0].length });
-  }
-  tokens.sort((a, b) => a.pos - b.pos);
 
-  let curQ = null, curOpt = null, curOptStart = 0;
+  for (let i = 0; i < qPositions.length; i++) {
+    const { n, bodyStart } = qPositions[i];
+    const bodyEnd = i + 1 < qPositions.length ? qPositions[i+1].start : text.length;
+    const body = text.slice(bodyStart, bodyEnd).trim();
 
-  for (let i = 0; i < tokens.length; i++) {
-    const tok = tokens[i];
-    const nextPos = i + 1 < tokens.length ? tokens[i+1].pos : text.length;
-    const content = text.slice(tok.end, nextPos).replace(/\s+/g, ' ').trim();
+    // Split body on option markers: " A. " " B. " " C. " " D. "
+    // But only when preceded by non-Chinese, non-letter characters
+    // Pattern: space + A/B/C/D + ". " where preceding char is not a Chinese char or letter
+    const optSplit = body.split(/(?<=\s)([A-D])\. /);
+    // optSplit will be: [before_A, "A", A_text, "B", B_text, "C", C_text, "D", D_text]
 
-    if (tok.type === 'Q') {
-      // Save previous
-      if (curOpt !== null && curQ) curQ.options.push(curOpt);
-      if (curQ && curQ.options.length >= 2) questions.push(curQ);
-      curQ = { serial: tok.n, text: content, options: [], answer: null, explanation: "" };
-      curOpt = null;
-    } else if (tok.type === 'O' && curQ) {
-      if (curOpt !== null) curQ.options.push(curOpt);
-      curOpt = content;
+    const questionText = optSplit[0].trim();
+    const options = [];
+    for (let j = 1; j < optSplit.length; j += 2) {
+      if (/^[A-D]$/.test(optSplit[j]) && optSplit[j+1]) {
+        options.push(optSplit[j+1].trim());
+      }
+    }
+
+    if (questionText.length > 3 && options.length >= 2) {
+      questions.push({ serial: n, text: questionText, options, answer: null, explanation: "" });
     }
   }
-  if (curOpt !== null && curQ) curQ.options.push(curOpt);
-  if (curQ && curQ.options.length >= 2) questions.push(curQ);
+
   questions.sort((a, b) => a.serial - b.serial);
   return questions;
 }
