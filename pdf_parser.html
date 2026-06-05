@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>國考 PDF 解析工具</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+  :root {
+    --bg: #0f1117; --surface: #181c27; --surface2: #1e2336;
+    --border: #2a3050; --accent: #4f8ef7; --correct: #2dca8c;
+    --wrong: #f75f5f; --gold: #f5c842; --text: #e8eaf2;
+    --text-muted: #7880a0; --text-dim: #a0a8c0; --radius: 12px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Noto Sans TC', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding: 2rem 1rem 4rem; }
+
+  .container { max-width: 860px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem; }
+
+  h1 { font-size: 1.3rem; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+  h1 span { font-size: 1.6rem; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; }
+  .card h2 { font-size: 0.9rem; color: var(--text-muted); letter-spacing: 0.06em; margin-bottom: 1rem; text-transform: uppercase; }
+
+  /* Steps */
+  .steps { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media(max-width:600px){ .steps { grid-template-columns: 1fr; } }
+
+  .step { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 1.2rem; }
+  .step-num { font-family: monospace; font-size: 0.72rem; color: var(--accent); background: rgba(79,142,247,0.12); padding: 2px 8px; border-radius: 4px; display: inline-block; margin-bottom: 0.6rem; }
+  .step h3 { font-size: 0.9rem; margin-bottom: 0.8rem; }
+
+  /* Upload zones */
+  .upload-zone {
+    border: 2px dashed var(--border); border-radius: 8px; padding: 1.2rem;
+    text-align: center; cursor: pointer; transition: all 0.2s; position: relative;
+    margin-bottom: 0.6rem;
+  }
+  .upload-zone:hover, .upload-zone.drag-over { border-color: var(--accent); background: rgba(79,142,247,0.06); }
+  .upload-zone.loaded { border-color: var(--correct); background: rgba(45,202,140,0.06); }
+  .upload-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+  .upload-zone .icon { font-size: 1.8rem; margin-bottom: 0.4rem; }
+  .upload-zone .label { font-size: 0.82rem; color: var(--text-muted); }
+  .upload-zone .filename { font-size: 0.8rem; color: var(--correct); margin-top: 0.4rem; font-family: monospace; }
+
+  /* Subject select */
+  select {
+    width: 100%; padding: 0.6rem 0.8rem; background: var(--surface2);
+    border: 1.5px solid var(--border); border-radius: 8px; color: var(--text);
+    font-family: inherit; font-size: 0.88rem; cursor: pointer; margin-bottom: 0.6rem;
+  }
+  select:focus { outline: none; border-color: var(--accent); }
+
+  .row { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+  input[type=number] {
+    width: 90px; padding: 0.6rem 0.8rem; background: var(--surface2);
+    border: 1.5px solid var(--border); border-radius: 8px; color: var(--text);
+    font-family: inherit; font-size: 0.88rem;
+  }
+  input[type=text] {
+    flex: 1; padding: 0.6rem 0.8rem; background: var(--surface2);
+    border: 1.5px solid var(--border); border-radius: 8px; color: var(--text);
+    font-family: inherit; font-size: 0.88rem;
+  }
+  label.small { font-size: 0.78rem; color: var(--text-muted); display: block; margin-bottom: 3px; }
+
+  /* Buttons */
+  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 0.65rem 1.4rem; border-radius: 8px; font-family: inherit; font-size: 0.9rem; font-weight: 500; cursor: pointer; transition: all 0.18s; border: none; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #6fa3ff; transform: translateY(-1px); box-shadow: 0 4px 20px rgba(79,142,247,0.35); }
+  .btn-success { background: var(--correct); color: #0f1117; }
+  .btn-success:hover { background: #3ddda0; }
+  .btn-ghost { background: transparent; color: var(--text-muted); border: 1.5px solid var(--border); }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
+
+  /* Log */
+  .log { background: #0a0c12; border: 1px solid var(--border); border-radius: 8px; padding: 1rem; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; min-height: 120px; max-height: 240px; overflow-y: auto; color: var(--text-dim); }
+  .log .ok { color: var(--correct); }
+  .log .warn { color: var(--gold); }
+  .log .err { color: var(--wrong); }
+  .log .info { color: var(--accent); }
+
+  /* Preview table */
+  .preview-wrap { overflow-x: auto; margin-top: 1rem; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  th { background: var(--surface2); color: var(--text-muted); font-weight: 600; padding: 0.5rem 0.8rem; text-align: left; border-bottom: 1px solid var(--border); }
+  td { padding: 0.5rem 0.8rem; border-bottom: 1px solid rgba(42,48,80,0.5); vertical-align: top; }
+  tr:hover td { background: rgba(79,142,247,0.04); }
+  .ans-badge { display: inline-block; width: 22px; height: 22px; border-radius: 4px; background: var(--correct); color: #0f1117; font-weight: 700; font-size: 0.75rem; text-align: center; line-height: 22px; }
+
+  /* Stats bar */
+  .stats { display: flex; gap: 1.5rem; flex-wrap: wrap; }
+  .stat { display: flex; flex-direction: column; align-items: center; }
+  .stat-num { font-family: monospace; font-size: 1.4rem; font-weight: 700; color: var(--accent); }
+  .stat-label { font-size: 0.72rem; color: var(--text-muted); }
+
+  /* Result actions */
+  .result-actions { display: flex; gap: 0.8rem; flex-wrap: wrap; align-items: center; margin-top: 1rem; }
+
+  /* Merge section */
+  .merge-zone { border: 2px dashed var(--border); border-radius: 8px; padding: 1rem; position: relative; }
+  .merge-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+  .merge-list { display: flex; flex-direction: column; gap: 0.4rem; margin-top: 0.6rem; }
+  .merge-item { display: flex; justify-content: space-between; align-items: center; background: var(--surface2); border-radius: 6px; padding: 0.4rem 0.8rem; font-size: 0.82rem; }
+  .merge-item .rm { cursor: pointer; color: var(--wrong); font-size: 0.9rem; background: none; border: none; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1><span>📄</span> 醫檢師國考 PDF 解析工具</h1>
+
+  <!-- ── STEP 1: 設定 ── -->
+  <div class="card">
+    <h2>① 基本設定</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">STEP 1</div>
+        <h3>選擇科目</h3>
+        <select id="sel-subject">
+          <option value="臨床生理學與病理學">🫀 臨床生理學與病理學</option>
+          <option value="臨床血液學與血庫學">🩸 臨床血液學與血庫學</option>
+          <option value="醫學分子檢驗學與臨床鏡檢學">🔬 醫學分子檢驗學與臨床鏡檢學</option>
+          <option value="微生物學及臨床微生物學">🦠 微生物學及臨床微生物學</option>
+          <option value="生物化學與臨床生化學">🧪 生物化學與臨床生化學</option>
+          <option value="臨床血清免疫學與臨床病毒學" selected>🛡️ 臨床血清免疫學與臨床病毒學</option>
+        </select>
+        <div class="row">
+          <div>
+            <label class="small">年度（民國）</label>
+            <input type="number" id="inp-year" value="114" min="100" max="130">
+          </div>
+          <div style="flex:1">
+            <label class="small">次別</label>
+            <input type="text" id="inp-exam" value="第一次" placeholder="第一次 / 第二次">
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">STEP 2</div>
+        <h3>上傳 PDF 檔案</h3>
+        <div class="upload-zone" id="zone-q" ondragover="dragOver(event,'zone-q')" ondragleave="dragLeave('zone-q')" ondrop="dropFile(event,'q')">
+          <input type="file" accept=".pdf" onchange="loadFile(event,'q')">
+          <div class="icon">📝</div>
+          <div class="label">題目 PDF<br><small>拖曳或點擊選擇</small></div>
+          <div class="filename" id="fn-q"></div>
+        </div>
+        <div class="upload-zone" id="zone-a" ondragover="dragOver(event,'zone-a')" ondragleave="dragLeave('zone-a')" ondrop="dropFile(event,'a')">
+          <input type="file" accept=".pdf" onchange="loadFile(event,'a')">
+          <div class="icon">✅</div>
+          <div class="label">答案卷 PDF<br><small>拖曳或點擊選擇</small></div>
+          <div class="filename" id="fn-a"></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:1rem; display:flex; gap:0.8rem; flex-wrap:wrap;">
+      <button class="btn btn-primary" id="btn-parse" onclick="startParse()" disabled>🚀 開始解析</button>
+      <button class="btn btn-ghost" onclick="resetAll()">↺ 重置</button>
+    </div>
+  </div>
+
+  <!-- ── LOG ── -->
+  <div class="card" id="log-card" style="display:none">
+    <h2>② 解析紀錄</h2>
+    <div class="log" id="log"></div>
+  </div>
+
+  <!-- ── RESULT ── -->
+  <div class="card" id="result-card" style="display:none">
+    <h2>③ 解析結果</h2>
+    <div class="stats">
+      <div class="stat"><div class="stat-num" id="stat-total">0</div><div class="stat-label">題目數</div></div>
+      <div class="stat"><div class="stat-num" id="stat-ans">0</div><div class="stat-label">答案數</div></div>
+      <div class="stat"><div class="stat-num" id="stat-match" style="color:var(--correct)">0</div><div class="stat-label">配對成功</div></div>
+      <div class="stat"><div class="stat-num" id="stat-fail" style="color:var(--wrong)">0</div><div class="stat-label">配對失敗</div></div>
+    </div>
+    <div class="preview-wrap">
+      <table id="preview-table">
+        <thead><tr><th>#</th><th>題目（前40字）</th><th>選項數</th><th>答案</th></tr></thead>
+        <tbody id="preview-body"></tbody>
+      </table>
+    </div>
+    <div class="result-actions">
+      <button class="btn btn-success" id="btn-dl" onclick="downloadJSON()">⬇ 下載 JSON</button>
+      <span id="dl-hint" style="font-size:0.8rem;color:var(--text-muted)"></span>
+    </div>
+  </div>
+
+  <!-- ── MERGE ── -->
+  <div class="card">
+    <h2>④ 合併多份 JSON（選用）</h2>
+    <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:0.8rem">
+      已有多個年度的 JSON？可在此合併成一個檔案，直接覆蓋 GitHub 上的舊版。
+    </p>
+    <div class="merge-zone">
+      <input type="file" accept=".json" multiple onchange="loadMergeFiles(event)">
+      <div style="text-align:center;font-size:0.85rem;color:var(--text-muted);">點擊或拖曳選擇多個 JSON 檔案</div>
+    </div>
+    <div class="merge-list" id="merge-list"></div>
+    <div style="margin-top:0.8rem;display:flex;gap:0.8rem;flex-wrap:wrap;">
+      <button class="btn btn-primary" id="btn-merge" onclick="mergeJSONs()" disabled>🔗 合併並下載</button>
+      <span id="merge-hint" style="font-size:0.8rem;color:var(--text-muted)"></span>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── PDF.js setup ──
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+// ── State ──
+let pdfQ = null, pdfA = null;
+let parsedQuestions = [];
+let mergeFiles = [];
+
+// ── Drag & Drop ──
+function dragOver(e, id) { e.preventDefault(); document.getElementById(id).classList.add('drag-over'); }
+function dragLeave(id) { document.getElementById(id).classList.remove('drag-over'); }
+function dropFile(e, type) {
+  e.preventDefault();
+  dragLeave(type === 'q' ? 'zone-q' : 'zone-a');
+  const file = e.dataTransfer.files[0];
+  if (file) processFile(file, type);
+}
+
+// ── File loading ──
+function loadFile(e, type) { if (e.target.files[0]) processFile(e.target.files[0], type); }
+
+async function processFile(file, type) {
+  const zone = document.getElementById(type === 'q' ? 'zone-q' : 'zone-a');
+  const fnEl = document.getElementById(type === 'q' ? 'fn-q' : 'fn-a');
+  try {
+    const ab = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: ab }).promise;
+    if (type === 'q') pdfQ = pdf;
+    else pdfA = pdf;
+    zone.classList.add('loaded');
+    fnEl.textContent = `✓ ${file.name} (${pdf.numPages}頁)`;
+  } catch(e) {
+    fnEl.textContent = `❌ 無法讀取：${e.message}`;
+  }
+  document.getElementById('btn-parse').disabled = !(pdfQ && pdfA);
+}
+
+// ── Extract text from PDF ──
+async function extractText(pdf) {
+  let text = '';
+  for (let p = 1; p <= pdf.numPages; p++) {
+    const page = await pdf.getPage(p);
+    const content = await page.getTextContent();
+    // Sort items by vertical position then horizontal
+    const items = content.items.sort((a, b) => {
+      const dy = Math.round(b.transform[5]) - Math.round(a.transform[5]);
+      return dy !== 0 ? dy : a.transform[4] - b.transform[4];
+    });
+    text += items.map(i => i.str).join(' ') + '\n';
+  }
+  return text;
+}
+
+// ── Parse questions from text ──
+function parseQuestions(text) {
+  const questions = [];
+  // Normalize: remove extra spaces, fix common OCR issues
+  text = text.replace(/\r\n/g, '\n').replace(/[ \t]+/g, ' ');
+
+  // Split on question numbers: lines starting with digit(s) + . or ．
+  // e.g. "1.", "12.", "1．"
+  const qPattern = /(?:^|\n)(\d{1,2})[\.．、](.+?)(?=\n\d{1,2}[\.．、]|\n*$)/gs;
+  let match;
+
+  while ((match = qPattern.exec(text)) !== null) {
+    const serial = parseInt(match[1]);
+    const body = match[2].trim();
+
+    // Extract options A B C D
+    const optPattern = /[（(]?([A-D])[）)\.．、]\s*(.+?)(?=[（(]?[A-D][）)\.．、]|$)/gs;
+    const options = [];
+    let optMatch;
+    // Find where options start
+    const firstOpt = body.search(/[（(]?[A-D][）)\.．、]/);
+    const questionText = firstOpt > 0 ? body.slice(0, firstOpt).trim() : body.trim();
+    const optBody = firstOpt > 0 ? body.slice(firstOpt) : '';
+
+    let om;
+    const op2 = /[（(]?([A-D])[）)\.．、]\s*([\s\S]+?)(?=[（(]?[A-D][）)\.．、]|$)/g;
+    while ((om = op2.exec(optBody)) !== null) {
+      options.push(om[2].replace(/\s+/g, ' ').trim());
+    }
+
+    if (questionText && options.length >= 2) {
+      questions.push({
+        serial,
+        text: questionText,
+        options,
+        answer: null,
+        explanation: ""
+      });
+    }
+  }
+  return questions;
+}
+
+// ── Parse answer key from text ──
+function parseAnswers(text) {
+  // Look for patterns like: 01 C  02 B  03 A ...
+  // or table format with Ａ Ｂ Ｃ Ｄ (full-width)
+  const answers = {};
+  const letterMap = {
+    'A':0,'B':1,'C':2,'D':3,
+    'Ａ':0,'Ｂ':1,'Ｃ':2,'Ｄ':3,
+    'a':0,'b':1,'c':2,'d':3
+  };
+
+  // Pattern 1: "01 C" or "1 C" pairs
+  const p1 = /\b(\d{1,2})\s+([ABCDＡＢＣＤabcd])\b/g;
+  let m;
+  while ((m = p1.exec(text)) !== null) {
+    const n = parseInt(m[1]);
+    if (n >= 1 && n <= 80 && letterMap[m[2]] !== undefined) {
+      answers[n] = letterMap[m[2]];
+    }
+  }
+
+  // Pattern 2: rows of full-width letters (answer sheet format)
+  // "Ｃ Ｂ Ａ Ｂ Ｄ ..."
+  if (Object.keys(answers).length < 20) {
+    const fwLetters = text.match(/[ＡＢＣＤabcdABCD]/g) || [];
+    if (fwLetters.length >= 60) {
+      fwLetters.forEach((l, i) => {
+        if (letterMap[l] !== undefined) answers[i + 1] = letterMap[l];
+      });
+    }
+  }
+
+  return answers;
+}
+
+// ── Main parse ──
+async function startParse() {
+  const btn = document.getElementById('btn-parse');
+  btn.disabled = true;
+  btn.textContent = '⏳ 解析中…';
+
+  document.getElementById('log-card').style.display = '';
+  document.getElementById('result-card').style.display = 'none';
+  const logEl = document.getElementById('log');
+  logEl.innerHTML = '';
+
+  function log(msg, cls='') {
+    const line = document.createElement('div');
+    line.className = cls;
+    line.textContent = msg;
+    logEl.appendChild(line);
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+
+  try {
+    log('📄 擷取題目 PDF 文字…', 'info');
+    const qText = await extractText(pdfQ);
+    log(`   擷取完成，共 ${qText.length} 字元`);
+
+    log('📄 擷取答案卷 PDF 文字…', 'info');
+    const aText = await extractText(pdfA);
+    log(`   擷取完成，共 ${aText.length} 字元`);
+
+    log('🔍 解析題目結構…', 'info');
+    const questions = parseQuestions(qText);
+    log(`   找到 ${questions.length} 道題目`, questions.length >= 75 ? 'ok' : 'warn');
+
+    log('🔍 解析答案…', 'info');
+    const answers = parseAnswers(aText);
+    log(`   找到 ${Object.keys(answers).length} 個答案`, Object.keys(answers).length >= 75 ? 'ok' : 'warn');
+
+    // Match answers to questions
+    let matched = 0, failed = 0;
+    const year = parseInt(document.getElementById('inp-year').value);
+    const exam = document.getElementById('inp-exam').value.trim();
+    const subject = document.getElementById('sel-subject').value;
+
+    questions.forEach(q => {
+      if (answers[q.serial] !== undefined) {
+        q.answer = answers[q.serial];
+        q.year = year;
+        q.exam = exam;
+        matched++;
+      } else {
+        q.answer = 0;
+        q.year = year;
+        q.exam = exam;
+        failed++;
+        log(`   ⚠ 第 ${q.serial} 題找不到對應答案`, 'warn');
+      }
+    });
+
+    log(`✅ 配對完成：${matched} 題成功，${failed} 題失敗`, matched > 0 ? 'ok' : 'err');
+
+    parsedQuestions = questions;
+
+    // Show results
+    document.getElementById('stat-total').textContent = questions.length;
+    document.getElementById('stat-ans').textContent = Object.keys(answers).length;
+    document.getElementById('stat-match').textContent = matched;
+    document.getElementById('stat-fail').textContent = failed;
+
+    const LABELS = ['A','B','C','D'];
+    const tbody = document.getElementById('preview-body');
+    tbody.innerHTML = '';
+    questions.forEach(q => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="font-family:monospace;color:var(--text-muted)">${q.serial}</td>
+        <td>${q.text.slice(0, 45)}${q.text.length > 45 ? '…' : ''}</td>
+        <td style="text-align:center;color:var(--text-muted)">${q.options.length}</td>
+        <td><span class="ans-badge">${LABELS[q.answer] || '?'}</span></td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    document.getElementById('result-card').style.display = '';
+    document.getElementById('dl-hint').textContent =
+      `儲存為：${subject}.json，放入 GitHub 的 questions/ 資料夾`;
+
+    if (failed > 5) {
+      log('⚠ 失敗題數偏多，建議檢查答案卷 PDF 格式是否正確', 'warn');
+    }
+
+  } catch(e) {
+    log(`❌ 發生錯誤：${e.message}`, 'err');
+    console.error(e);
+  }
+
+  btn.disabled = false;
+  btn.textContent = '🚀 開始解析';
+}
+
+// ── Download JSON ──
+function downloadJSON() {
+  const subject = document.getElementById('sel-subject').value;
+  const icons = {
+    '臨床生理學與病理學':'🫀',
+    '臨床血液學與血庫學':'🩸',
+    '醫學分子檢驗學與臨床鏡檢學':'🔬',
+    '微生物學及臨床微生物學':'🦠',
+    '生物化學與臨床生化學':'🧪',
+    '臨床血清免疫學與臨床病毒學':'🛡️',
+  };
+  const output = {
+    subject,
+    icon: icons[subject] || '📋',
+    questions: parsedQuestions
+  };
+  const blob = new Blob([JSON.stringify(output, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${subject}.json`;
+  a.click();
+}
+
+// ── Reset ──
+function resetAll() {
+  pdfQ = pdfA = null;
+  parsedQuestions = [];
+  ['zone-q','zone-a'].forEach(id => {
+    const z = document.getElementById(id);
+    z.classList.remove('loaded','drag-over');
+  });
+  ['fn-q','fn-a'].forEach(id => document.getElementById(id).textContent = '');
+  document.getElementById('btn-parse').disabled = true;
+  document.getElementById('log-card').style.display = 'none';
+  document.getElementById('result-card').style.display = 'none';
+  document.getElementById('log').innerHTML = '';
+}
+
+// ── Merge JSONs ──
+function loadMergeFiles(e) {
+  const files = Array.from(e.target.files);
+  files.forEach(f => {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        mergeFiles.push({ name: f.name, data });
+        renderMergeList();
+      } catch { alert(`無法解析 ${f.name}`); }
+    };
+    reader.readAsText(f);
+  });
+}
+
+function renderMergeList() {
+  const list = document.getElementById('merge-list');
+  list.innerHTML = mergeFiles.map((f, i) => `
+    <div class="merge-item">
+      <span>📄 ${f.name} <span style="color:var(--text-muted)">(${f.data.questions?.length || 0} 題)</span></span>
+      <button class="rm" onclick="removeMerge(${i})">✕</button>
+    </div>
+  `).join('');
+  document.getElementById('btn-merge').disabled = mergeFiles.length < 2;
+  document.getElementById('merge-hint').textContent =
+    mergeFiles.length >= 2 ? `合併後共 ${mergeFiles.reduce((s,f)=>s+(f.data.questions?.length||0),0)} 題` : '';
+}
+
+function removeMerge(i) {
+  mergeFiles.splice(i, 1);
+  renderMergeList();
+}
+
+function mergeJSONs() {
+  if (mergeFiles.length < 2) return;
+  const subject = mergeFiles[0].data.subject || '未知科目';
+  const icon    = mergeFiles[0].data.icon    || '📋';
+  const allQ = [];
+  const seen = new Set();
+  mergeFiles.forEach(f => {
+    (f.data.questions || []).forEach(q => {
+      const key = `${q.year}-${q.exam}-${q.serial}`;
+      if (!seen.has(key)) { seen.add(key); allQ.push(q); }
+    });
+  });
+  // Sort by year → exam → serial
+  allQ.sort((a,b) => a.year !== b.year ? a.year-b.year : a.exam.localeCompare(b.exam) || a.serial-b.serial);
+
+  const output = { subject, icon, questions: allQ };
+  const blob = new Blob([JSON.stringify(output, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${subject}.json`;
+  a.click();
+  document.getElementById('merge-hint').textContent = `✅ 已合併 ${allQ.length} 題，重複題目自動去除`;
+}
+</script>
+</body>
+</html>
