@@ -330,34 +330,31 @@ function parseQuestions(rawText) {
 }
 
 // ── Parse answer key from text ──
-function parseAnswers(text) {
-  // Look for patterns like: 01 C  02 B  03 A ...
-  // or table format with Ａ Ｂ Ｃ Ｄ (full-width)
+function parseAnswers(rawText) {
+  const text = normalizeText(rawText);
   const answers = {};
-  const letterMap = {
-    'A':0,'B':1,'C':2,'D':3,
-    'Ａ':0,'Ｂ':1,'Ｃ':2,'Ｄ':3,
-    'a':0,'b':1,'c':2,'d':3
-  };
+  const letterMap = { 'A':0,'B':1,'C':2,'D':3 };
 
-  // Pattern 1: "01 C" or "1 C" pairs
-  const p1 = /\b(\d{1,2})\s+([ABCDＡＢＣＤabcd])\b/g;
+  // Strategy 1: "題號 答案" pairs e.g. "01 C" or "1 C"
+  const p1 = /\b(\d{1,2})\s+([ABCD])\b/g;
   let m;
   while ((m = p1.exec(text)) !== null) {
     const n = parseInt(m[1]);
-    if (n >= 1 && n <= 80 && letterMap[m[2]] !== undefined) {
-      answers[n] = letterMap[m[2]];
-    }
+    if (n >= 1 && n <= 80) answers[n] = letterMap[m[2]];
   }
 
-  // Pattern 2: rows of full-width letters (answer sheet format)
-  // "Ｃ Ｂ Ａ Ｂ Ｄ ..."
+  // Strategy 2: one letter per line (this PDF's format)
+  // Find all standalone A/B/C/D lines (after skipping header lines)
   if (Object.keys(answers).length < 20) {
-    const fwLetters = text.match(/[ＡＢＣＤabcdABCD]/g) || [];
-    if (fwLetters.length >= 60) {
-      fwLetters.forEach((l, i) => {
-        if (letterMap[l] !== undefined) answers[i + 1] = letterMap[l];
-      });
+    const lines = text.split('\n').map(l => l.trim());
+    const letterLines = [];
+    for (const line of lines) {
+      if (/^[ABCD]$/.test(line)) {
+        letterLines.push(letterMap[line]);
+      }
+    }
+    if (letterLines.length >= 60) {
+      letterLines.forEach((ans, i) => { answers[i + 1] = ans; });
     }
   }
 
