@@ -386,11 +386,11 @@ function parseInline(rawText) {
 
 // ── Parse answer key from text ──
 function parseAnswers(rawText) {
-  const text = normalizeText(rawText);
   const answers = {};
   const letterMap = { 'A':0,'B':1,'C':2,'D':3 };
 
   // Strategy 1: "題號 答案" pairs e.g. "01 C" or "1 C"
+  const text = normalizeText(rawText);
   const p1 = /\b(\d{1,2})\s+([ABCD])\b/g;
   let m;
   while ((m = p1.exec(text)) !== null) {
@@ -398,18 +398,39 @@ function parseAnswers(rawText) {
     if (n >= 1 && n <= 80) answers[n] = letterMap[m[2]];
   }
 
-  // Strategy 2: one letter per line (this PDF's format)
-  // Find all standalone A/B/C/D lines (after skipping header lines)
+  // Strategy 2: one letter per line
+  // Try both normalized and raw text, split on any newline/whitespace boundary
   if (Object.keys(answers).length < 20) {
-    const lines = text.split('\n').map(l => l.trim());
     const letterLines = [];
-    for (const line of lines) {
-      if (/^[ABCD]$/.test(line)) {
-        letterLines.push(letterMap[line]);
+    // Split raw text on newlines, try every line
+    const rawLines = rawText.split(/[\n\r]+/);
+    for (const line of rawLines) {
+      const clean = line.replace(/[\s\u3000\u00a0]/g, ''); // remove all whitespace incl. full-width
+      if (/^[ABCD]$/.test(clean)) {
+        letterLines.push(letterMap[clean]);
       }
     }
     if (letterLines.length >= 60) {
       letterLines.forEach((ans, i) => { answers[i + 1] = ans; });
+    }
+  }
+
+  // Strategy 3: extract all single letters from answer sheet area
+  if (Object.keys(answers).length < 20) {
+    const allLetters = [];
+    const rawLines = rawText.split(/[\n\r]+/);
+    // Skip header lines (first 15 lines), then collect letters
+    let headerDone = false;
+    for (const line of rawLines) {
+      const clean = line.replace(/[\s\u3000\u00a0]/g, '');
+      if (!headerDone) {
+        if (clean === '答案') headerDone = true;
+        continue;
+      }
+      if (/^[ABCD]$/.test(clean)) allLetters.push(letterMap[clean]);
+    }
+    if (allLetters.length >= 60) {
+      allLetters.forEach((ans, i) => { answers[i + 1] = ans; });
     }
   }
 
