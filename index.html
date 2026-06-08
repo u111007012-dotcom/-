@@ -598,36 +598,7 @@ const QUESTION_BANK = {
   "臨床血清免疫學與臨床病毒學": {
     icon: "🛡️",
     questions: [
-
-def patch(src_path, dst_path):
-    with open(src_path, 'r', encoding='utf-8') as f:
-        html = f.read()
-
-    with open('inject_112.js', 'r', encoding='utf-8') as f:
-        new_q = f.read()
-
-    # 1. Update the comment
-    html = html.replace(
-        "//  ★ 112-2、113-1、113-2、114-1 四份試卷已匯入（共 320 題）"
-    )
-
-    # 2. Insert 112 questions before the first 113-first-exam question
-    search = '{\n        text: "下列何種主要組織相容性複合體（MHC）表現在胎兒衍生的胎盤細胞'
-    if search not in html:
-        print("ERROR: Could not find insertion point!")
-        return
-
-    html = html.replace(search, new_q + '\n' + search, 1)
-
-    with open(dst_path, 'w', encoding='utf-8') as f:
-        f.write(html)
-
-    print(f"Done! Written to {dst_path}")
-
-if len(sys.argv) != 3:
-    print("Usage: python3 patch_quiz.py input.html output.html")
-else:
-    patch(sys.argv[1], sys.argv[2]){
+      {
         text: "下列何種主要組織相容性複合體（MHC）表現在胎兒衍生的胎盤細胞（fetus-derived placental cells），可以抑制NK細胞對胎盤細胞的毒殺？",
         options: [
           "HLA-A",
